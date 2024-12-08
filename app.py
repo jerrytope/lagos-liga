@@ -230,7 +230,7 @@ def plot_pass_map_for_player(ax, player_name, df_pass):
         fontsize=8,
         facecolor='white',  # Change the background to white
         frameon=True,  # Ensure legend has a background
-        edgecolor='black',  # Add a border for contrast
+        edgecolors='black',  # Add a border for contrast
     )
 
 def plot_pass_maps(player1, player2, df_pass):
@@ -500,7 +500,7 @@ team2_tot_xg = team2_df["statsbomb_xg"].sum().round(2)
 #               c=team_colors[team1],
 #               alpha=0.5,
 #               hatch="//",
-#               edgecolor="#101010",
+#               edgecolors="#101010",
 #               marker="s",
 #               ax=ax[0],
 #               label=f"{team1} non-goals")
@@ -524,7 +524,7 @@ team2_tot_xg = team2_df["statsbomb_xg"].sum().round(2)
 #               c=team_colors[team2],
 #               alpha=0.5,
 #               hatch="//",
-#               edgecolor="#101010",
+#               edgecolors="#101010",
 #               marker="s",
 #               ax=ax[1],
 #               label=f"{team2} non-goals")
@@ -564,7 +564,7 @@ pitch.scatter(team1_df_g["start_location_x"],
               s=team1_df_g["statsbomb_xg"] * 500 + 200,  # Larger size for boldness
               marker="football",
               c=goal_color,
-              edgecolor="black",
+              edgecolors="black",
               linewidth=2,
               ax=ax[0],
               label=f"{team1} goals")
@@ -575,7 +575,7 @@ pitch.scatter(team1_df_ng["start_location_x"],
               s=team1_df_ng["statsbomb_xg"] * 500 + 200,  # Larger size for boldness
               c=shot_color,
               alpha=0.7,
-              edgecolor="black",
+              edgecolors="black",
               marker="s",
               linewidth=2,
               ax=ax[0],
@@ -591,7 +591,7 @@ pitch.scatter(team2_df_g["start_location_x"],
               s=team2_df_g["statsbomb_xg"] * 500 + 200,  # Larger size for boldness
               marker="football",
               c=goal_color,
-              edgecolor="black",
+              edgecolors="black",
               linewidth=2,
               ax=ax[1],
               label=f"{team2} goals")
@@ -602,7 +602,7 @@ pitch.scatter(team2_df_ng["start_location_x"],
               s=team2_df_ng["statsbomb_xg"] * 500 + 200,  # Larger size for boldness
               c=shot_color,
               alpha=0.7,
-              edgecolor="black",
+              edgecolors="black",
               marker="s",
               linewidth=2,
               ax=ax[1],
