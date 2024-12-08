@@ -5,19 +5,30 @@ import mplsoccer
 from mplsoccer.pitch import Pitch
 
 # Google Sheets document ID
-
+# https://docs.google.com/spreadsheets/d/11GOW9_pzJmAAAlvWKFYdh7YCc0lF4U7w/edit?gid=306235239#gid=306235239
 
 # st. set_page_config(layout="wide")
-st.set_page_config(layout="wide", page_title="Lagos Liga Analysis With MIAS")
-document_id = '1oCS-ubjn2FtmkHevCToSCfcgL6WpjgXA3qoGnsu8IWk'
+st.set_page_config( page_title="Lagos Liga Analysis With MIAS")
 
+# document_id = '1oCS-ubjn2FtmkHevCToSCfcgL6WpjgXA3qoGnsu8IWk'
+
+# def fetch_data(sheet_name):
+#     url = f'https://docs.google.com/spreadsheets/d/{document_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
+    # return pd.read_csv(url)
+# document_id = '1XDRCoTNodcU28nk4HYxOzjBJzt_e5gEo'
+
+# # @st.cache_data
+# def fetch_data(sheet_name):
+#     # Construct the URL to fetch data as a CSV
+#     url = f'https://docs.google.com/spreadsheets/d/{document_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
+#     return pd.read_csv(url)
+
+document_id = '11GOW9_pzJmAAAlvWKFYdh7YCc0lF4U7w'
+
+# @st.cache_data
 def fetch_data(sheet_name):
     url = f'https://docs.google.com/spreadsheets/d/{document_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
     return pd.read_csv(url)
-
-
-import plotly.graph_objs as go
-
 
 def create_plot(df, title):
     stats_column = 'stats'
@@ -95,7 +106,7 @@ def create_plot(df, title):
 df2 = fetch_data('TEAM_STATS')
 # df_team = fetch_data('TEAM_STATS')
 
-df2 = df2[['match_id_new','team_name','team score','goal attempt','shot ON','shot OFF', 'fouls', 'Corners', 'Offsides','yellow card', 'red card','goalkeeper saves']]
+df2 = df2[['match_id_new','team_name','Goals','Goal Attempts','Shots On Target','Shots Off Target', 'Fouls', 'Corners', 'Yellow Card', 'Red Card','Goalkeeper Saves']]
 
 
 match_id = df2['match_id_new'].unique()
@@ -106,8 +117,8 @@ match_id_filtered = df2[df2['match_id_new'] == item]
 
 
 fig1 = create_plot(match_id_filtered, f'{match_id_filtered["team_name"].iloc[0]} vs {match_id_filtered["team_name"].iloc[1]}')
-
-st.title("Match Day Team Stats")
+st.title("Lagos Liga Analysis With MIAS")
+st.subheader("Match Day Team Stats")
 st.plotly_chart(fig1)
 
 
@@ -153,6 +164,39 @@ import matplotlib.pyplot as plt
 from mplsoccer.pitch import Pitch
 import seaborn as sns
 
+# def plot_pass_map_for_player(ax, player_name, df_pass):
+#     # Filter the pass DataFrame for the selected player
+#     player_pass_df = df_pass[df_pass['player'] == player_name]
+
+#     # Create the pitch
+#     pitch = Pitch(pitch_type='statsbomb', pitch_color='#22312b', line_color='#c7d5cc')
+#     pitch.draw(ax=ax)
+#     ax.set_title(f'Pass Map for {player_name}', color='white', fontsize=10, pad=20)
+#     ax.invert_yaxis()
+
+#     # Plot each pass
+#     for _, row in player_pass_df.iterrows():
+#         if row['outcome'] == 'successful':
+#             ax.plot((row['x'], row['endX']), (row['y'], row['endY']), color='green')
+#             ax.scatter(row['x'], row['y'], color='green')
+#         elif row['outcome'] == 'unsuccessful':
+#             ax.plot((row['x'], row['endX']), (row['y'], row['endY']), color='red')
+#             ax.scatter(row['x'], row['y'], color='red')
+
+# def plot_pass_maps(player1, player2, df_pass):
+#     fig, axs = plt.subplots(1, 2, figsize=(12, 6))  # Two plots side by side
+
+#     fig.set_facecolor('#22312b')
+#     axs[0].patch.set_facecolor('#22312b')
+#     axs[1].patch.set_facecolor('#22312b')
+
+#     plot_pass_map_for_player(axs[0], player1, df_pass)
+#     plot_pass_map_for_player(axs[1], player2, df_pass)
+
+#     st.pyplot(fig)
+from matplotlib.lines import Line2D 
+from matplotlib.lines import Line2D  # Import Line2D for custom legend elements
+
 def plot_pass_map_for_player(ax, player_name, df_pass):
     # Filter the pass DataFrame for the selected player
     player_pass_df = df_pass[df_pass['player'] == player_name]
@@ -163,14 +207,31 @@ def plot_pass_map_for_player(ax, player_name, df_pass):
     ax.set_title(f'Pass Map for {player_name}', color='white', fontsize=10, pad=20)
     ax.invert_yaxis()
 
+    # Initialize legend elements
+    legend_elements = []
+
     # Plot each pass
     for _, row in player_pass_df.iterrows():
-        if row['outcome'] == 'Successful':
+        if row['outcome'] == 'successful':
             ax.plot((row['x'], row['endX']), (row['y'], row['endY']), color='green')
             ax.scatter(row['x'], row['y'], color='green')
-        elif row['outcome'] == 'Unsuccessful':
+            if not any(el.get_label() == "Successful" for el in legend_elements):
+                legend_elements.append(Line2D([0], [0], color='green', lw=2, label='Successful'))
+        elif row['outcome'] == 'unsuccessful':
             ax.plot((row['x'], row['endX']), (row['y'], row['endY']), color='red')
             ax.scatter(row['x'], row['y'], color='red')
+            if not any(el.get_label() == "Unsuccessful" for el in legend_elements):
+                legend_elements.append(Line2D([0], [0], color='red', lw=2, label='Unsuccessful'))
+
+    # Add legend to the plot
+    ax.legend(
+        handles=legend_elements,
+        loc='upper center',  # Move the legend upwards
+        fontsize=8,
+        facecolor='white',  # Change the background to white
+        frameon=True,  # Ensure legend has a background
+        edgecolor='black',  # Add a border for contrast
+    )
 
 def plot_pass_maps(player1, player2, df_pass):
     fig, axs = plt.subplots(1, 2, figsize=(12, 6))  # Two plots side by side
@@ -188,6 +249,8 @@ def plot_pass_maps(player1, player2, df_pass):
 
 
 
+
+
 df = fetch_data('PLAYER_STATS')
 df = df.iloc[:, 5:48]
 
@@ -195,7 +258,7 @@ df_stats = df.iloc[:,3:22]
 df_stats = df_stats.groupby('Player').sum(numeric_only=True).reset_index()
 
 
-stats = ['Goals Scored', 'Goals Conceded', 'Assists', 'Shots', 'Shots On Target', 'Penalty Kicks', 'Fouls Committed', 'Fouls Drawn', 'Yellow Cards', 'Red Card']
+stats = ['Goals', 'Assists', 'Chances Created','Shots on target','Shots off target', 'Crosses', 'Fouls committed', 'Fouls drawn', 'Corner', 'Saves']
 
 
 
@@ -209,15 +272,15 @@ stats = ['Goals Scored', 'Goals Conceded', 'Assists', 'Shots', 'Shots On Target'
 
 
 
-df_radar = fetch_data("FW_Rader")
+#   df_radar = fetch_data("FW_Rader")
 
 df_pass = fetch_data("Passes")
 
 
 # Streamlit app
 
-st.title("Lagos Liga Analysis With MIAS")
-st.subheader("Match Day Team Stats")
+# st.title("Lagos Liga Analysis With MIAS")
+# st.subheader("Match Day Team Stats")
 
 
 
@@ -227,22 +290,10 @@ st.subheader("Match Day Team Stats")
 st.sidebar.header("Radar and Pass Chart Comparison")
 
 # Filter by position
-position_options_team = df['POS'].unique()
-selected_position = st.sidebar.selectbox("Select Position", position_options_team)
-
-if selected_position == 'GK':
-    columns_to_use = ['Player', 'Save Percentage', 'Clean Sheets','Goal Conceded', 'Saves', 'Crosses Stopped', 'Penalty saves', 'Cross Clamed', 'Sweeper actions' ]                 
-elif selected_position == 'FW':
-    columns_to_use = ['Player', 'Goals', 'Shots on target', 'Conversion rate', 'Assists','Goal involvement', 'Penalties won', 'Attacking contribution', 'Minutes per goal']
-elif selected_position == 'MF':
-    columns_to_use = ['Player', 'Goals', 'Assists', 'Tackles', 'Interceptions', 'Chances created', 'Defensive errors','Fouls committed','Blocks','Goal involvement']      
-elif selected_position == 'DF':
-    columns_to_use = ['Player', 'Goals', 'Tackles', 'Fouls Won', 'Blocks', 'Minutes per card','Goal involvement', 'Defensive contribution', 'Defensive errors']        
 
 
 # Filter the radar DataFrame by the selected position
-filtered_df_radar = df[df['POS'] == selected_position]
-filtered_df_radar = df[columns_to_use]
+
 
 
 team_options = df['Team'].unique()
@@ -250,8 +301,35 @@ team1 = st.sidebar.selectbox("Select Team 1", team_options, index=0)
 team2 = st.sidebar.selectbox("Select Team 2", team_options, index=1)
 
 # Filter the DataFrame based on selected teams
+
+position_options_team = df['POS'].unique()
+selected_position = st.sidebar.selectbox("Select Position", position_options_team)
+
+# if selected_position == 'GK':
+#     columns_to_use = ['Player', 'Save Percentage', 'Clean Sheets','Goal Conceded', 'Saves', 'Crosses Stopped', 'Penalty saves', 'Cross Clamed', 'Sweeper actions' ]                 
+# elif selected_position == 'FW':
+#     columns_to_use = ['Player', 'Goals', 'Shots on target', 'Conversion rate', 'Assists','Goal involvement', 'Penalties won', 'Attacking contribution', 'Minutes per goal']
+# elif selected_position == 'MF':
+#     columns_to_use = ['Player', 'Goals', 'Assists', 'Tackles', 'Interceptions', 'Chances created', 'Defensive errors','Fouls committed','Blocks','Goal involvement']      
+# elif selected_position == 'DF':
+#     columns_to_use = ['Player', 'Goals', 'Tackles', 'Fouls Won', 'Blocks', 'Minutes per card','Goal involvement', 'Defensive contribution', 'Defensive errors']        
+
+
+if selected_position == 'GK':
+    columns_to_use = ['Player',  'Clean sheet', 'Saves', 'Crosses Claimed', 'Clearances']                 
+elif selected_position == 'FW':
+    columns_to_use = ['Player', 'Goals', 'Shots on target',  'Assists', 'Chances Created', 'Pass complete', 'Key Passes']#'Attacking Contribution'
+elif selected_position == 'MF':
+    columns_to_use = ['Player', 'Goals', 'Assists', 'Tackles', 'Interceptions', 'Chances created', 'Key Passes','Fouls committed','Blocks','Goal involvement']      
+elif selected_position == 'DF':
+    columns_to_use = ['Player', 'Goals', 'Tackles', 'Interceptions', 'Blocks', 'Clearances','Fouls committed', 'Defensive Contribution', 'Error']        
+
 df_team1_filtered = df[df['Team'] == team1]
 df_team2_filtered = df[df['Team'] == team2]
+
+
+filtered_df_radar = df[df['POS'] == selected_position]
+filtered_df_radar = df[columns_to_use]
 
 # Get all unique players from the selected teams
 players_team1 = df_team1_filtered['Player'].unique().tolist()
@@ -274,15 +352,60 @@ if player1 != player2:
     # st.dataframe(merged_df, use_container_width=True)  
 
 
-    
+    st.header('Radar Chart Comparison')
     fig = create_radar_chart(filtered_df_radar, player1, player2)
     st.plotly_chart(fig)
 else:
     st.sidebar.warning("Please select two different players.")
 
 
-
+st.header("Player Passes on Football Pitch")
 plot_pass_maps(player1, player2, df_pass)
+
+
+st.sidebar.header("Select Team and player for Heatmap")
+st.header(" Player Heatmap on Football Pitch")
+# Step 1: Team selection
+team_heat = st.sidebar.selectbox("Select a team:", df_pass["Team"].unique())
+
+# Filter players based on the selected team
+team_players_heat = df_pass[df_pass["Team"] == team_heat]["player"].unique()
+
+# Step 2: Player selection
+player_heat = st.sidebar.selectbox("Select a player from the team:", team_players_heat)
+
+# Filter data for the selected player
+player_data = df_pass[(df_pass["Team"] == team_heat) & (df_pass["player"] == player_heat)]
+
+# Create the heatmap plot
+fig_heat, ax = plt.subplots(figsize=(9, 6))
+fig_heat.set_facecolor('#22312b')
+ax.patch.set_facecolor('#22312b')
+
+# Create the pitch
+pitch = Pitch(pitch_type='statsbomb', pitch_color='#22312b', line_color='#c7d5cc')
+pitch.draw(ax=ax)
+plt.gca().invert_yaxis()
+
+
+
+
+# Create the heatmap
+kde = sns.kdeplot(
+    player_data['x'],
+    player_data['y'],
+    shade=True,
+    alpha=0.5,
+    n_levels=10,
+    cmap='magma'
+)
+
+# Set pitch boundaries
+plt.xlim(0, 120)
+plt.ylim(0, 80)
+
+# Display the heatmap in Streamlit
+st.pyplot(fig_heat)
 
 
 st.sidebar.header("Select Stat for Viz top 5")
