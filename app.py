@@ -230,7 +230,7 @@ def plot_pass_map_for_player(ax, player_name, df_pass):
         fontsize=8,
         facecolor='white',  # Change the background to white
         frameon=True,  # Ensure legend has a background
-        edgecolors='black',  # Add a border for contrast
+        edgecolor='black',  # Add a border for contrast
     )
 
 def plot_pass_maps(player1, player2, df_pass):
@@ -477,7 +477,7 @@ team2_tot_goals = team2_df_g.shape[0]
 team2_tot_xg = team2_df["statsbomb_xg"].sum().round(2)
 
 # Plotting
-# pitch = VerticalPitch(half=True)
+# pitch = VerticalPitch(half=True, pitch_color="green", line_color="white")
 
 # fig, ax = plt.subplots(1, 2, figsize=(20, 8))
 
@@ -490,17 +490,17 @@ team2_tot_xg = team2_df["statsbomb_xg"].sum().round(2)
 #               team1_df_g["start_location_y"],
 #               s=team1_df_g["statsbomb_xg"]*500+100,
 #               marker="football",
-#               c=team_colors[team1],
+#               c="blue",
 #               ax=ax[0],
 #               label=f"{team1} goals")
 # # Team 1 non-goals
 # pitch.scatter(team1_df_ng["start_location_x"],
 #               team1_df_ng["start_location_y"],
 #               s=team1_df_ng["statsbomb_xg"]*500+100,
-#               c=team_colors[team1],
+#               c="red",
 #               alpha=0.5,
 #               hatch="//",
-#               edgecolors="#101010",
+#               edgecolor="#101010",
 #               marker="s",
 #               ax=ax[0],
 #               label=f"{team1} non-goals")
@@ -514,17 +514,17 @@ team2_tot_xg = team2_df["statsbomb_xg"].sum().round(2)
 #               team2_df_g["start_location_y"],
 #               s=team2_df_g["statsbomb_xg"]*500+100,
 #               marker="football",
-#               c=team_colors[team2],
+#               c="blue",
 #               ax=ax[1],
 #               label=f"{team2} goals")
 # # Team 2 non-goals
 # pitch.scatter(team2_df_ng["start_location_x"],
 #               team2_df_ng["start_location_y"],
 #               s=team2_df_ng["statsbomb_xg"]*500+100,
-#               c=team_colors[team2],
+#               c='red',
 #               alpha=0.5,
 #               hatch="//",
-#               edgecolors="#101010",
+#               edgecolor="#101010",
 #               marker="s",
 #               ax=ax[1],
 #               label=f"{team2} non-goals")
@@ -545,82 +545,70 @@ team2_tot_xg = team2_df["statsbomb_xg"].sum().round(2)
 
 # st.pyplot(fig)
 
-# Explicit color definitions
-goal_color = "blue"  # Color for goals
-shot_color = "red"   # Color for non-goals
+pitch = Pitch(pitch_type='statsbomb', pitch_color='green', line_color='white', goal_type='box')
 
-# Define a green pitch
-pitch = VerticalPitch(half=True, pitch_color="green", line_color="white", linewidth=2)
+# Create the figure
+fig, ax = pitch.draw(figsize=(7, 6))
 
-fig, ax = plt.subplots(1, 2, figsize=(20, 8))
+# Title
+ax.set_title(f"{team1} vs {team2} Shot Map", fontsize=20, pad=20)
 
-# Plot for Team 1
-pitch.draw(ax=ax[0])
-ax[0].set_title(f"{team1} Shots vs {team2}", fontsize=16, fontweight="bold", color="white")
-
-# Team 1 goals
+# Plot Team 1 shots (shooting towards the right goal)
+# Goals
 pitch.scatter(team1_df_g["start_location_x"],
               team1_df_g["start_location_y"],
-              s=team1_df_g["statsbomb_xg"] * 500 + 200,  # Larger size for boldness
+              s=team1_df_g["statsbomb_xg"] * 500 + 100,
               marker="football",
-              c=goal_color,
-              edgecolors="black",
-              linewidth=2,
-              ax=ax[0],
-              label=f"{team1} goals")
-
-# Team 1 non-goals
+              c="blue",
+              label=f"{team1} goals",
+              ax=ax)
+# Non-goals
 pitch.scatter(team1_df_ng["start_location_x"],
               team1_df_ng["start_location_y"],
-              s=team1_df_ng["statsbomb_xg"] * 500 + 200,  # Larger size for boldness
-              c=shot_color,
-              alpha=0.7,
-              edgecolors="black",
+              s=team1_df_ng["statsbomb_xg"] * 500 + 100,
+              c="red",
+              alpha=0.5,
+              hatch="//",
+              edgecolor="#101010",
               marker="s",
-              linewidth=2,
-              ax=ax[0],
-              label=f"{team1} non-goals")
+              label=f"{team1} non-goals",
+              ax=ax)
 
-# Plot for Team 2
-pitch.draw(ax=ax[1])
-ax[1].set_title(f"{team2} Shots vs {team1}", fontsize=16, fontweight="bold", color="white")
-
-# Team 2 goals
-pitch.scatter(team2_df_g["start_location_x"],
+# Plot Team 2 shots (shooting towards the left goal)
+# Goals
+pitch.scatter(120 - team2_df_g["start_location_x"],  # Mirroring x-coordinates for the other direction
               team2_df_g["start_location_y"],
-              s=team2_df_g["statsbomb_xg"] * 500 + 200,  # Larger size for boldness
+              s=team2_df_g["statsbomb_xg"] * 500 + 100,
               marker="football",
-              c=goal_color,
-              edgecolors="black",
-              linewidth=2,
-              ax=ax[1],
-              label=f"{team2} goals")
-
-# Team 2 non-goals
-pitch.scatter(team2_df_ng["start_location_x"],
+              c="cyan",
+              label=f"{team2} goals",
+              ax=ax)
+# Non-goals
+pitch.scatter(120 - team2_df_ng["start_location_x"],  # Mirroring x-coordinates for the other direction
               team2_df_ng["start_location_y"],
-              s=team2_df_ng["statsbomb_xg"] * 500 + 200,  # Larger size for boldness
-              c=shot_color,
-              alpha=0.7,
-              edgecolors="black",
+              s=team2_df_ng["statsbomb_xg"] * 500 + 100,
+              c="orange",
+              alpha=0.5,
+              hatch="//",
+              edgecolor="#101010",
               marker="s",
-              linewidth=2,
-              ax=ax[1],
-              label=f"{team2} non-goals")
+              label=f"{team2} non-goals",
+              ax=ax)
 
-# Team stats
-basic_info_txt1 = f"Shots: {team1_tot_shots} | Goals: {team1_tot_goals} | xG: {team1_tot_xg}"
-ax[0].text(0.5, -0.1, basic_info_txt1, size=15, ha="center", transform=ax[0].transAxes, color="white", fontweight="bold")
+# Add basic info for each team at the bottom
+basic_info_txt = (
+    f"{team1} - Shots: {team1_tot_shots} | Goals: {team1_tot_goals} | xG: {team1_tot_xg}\n"
+    f"{team2} - Shots: {team2_tot_shots} | Goals: {team2_tot_goals} | xG: {team2_tot_xg}"
+)
+fig.text(0.5, 0.02, basic_info_txt, fontsize=15, ha="center", color="white")
 
-basic_info_txt2 = f"Shots: {team2_tot_shots} | Goals: {team2_tot_goals} | xG: {team2_tot_xg}"
-ax[1].text(0.5, -0.1, basic_info_txt2, size=15, ha="center", transform=ax[1].transAxes, color="white", fontweight="bold")
-
-# Legends
-ax[0].legend(labelspacing=1.5, loc="lower center", fontsize=12, frameon=False)
-ax[1].legend(labelspacing=1.5, loc="lower center", fontsize=12, frameon=False)
+# Add legend
+ax.legend(labelspacing=1.5, loc="upper center", fontsize=12, bbox_to_anchor=(0.5, -0.05), ncol=2)
 
 # Display the plot
 st.pyplot(fig)
+
+
 
 data = fetch_data('matches')
 
