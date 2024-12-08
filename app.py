@@ -196,7 +196,8 @@ import seaborn as sns
 #     st.pyplot(fig)
 from matplotlib.lines import Line2D 
 from matplotlib.lines import Line2D  # Import Line2D for custom legend elements
-
+import io
+from matplotlib import pyplot as plt
 def plot_pass_map_for_player(ax, player_name, df_pass):
     # Filter the pass DataFrame for the selected player
     player_pass_df = df_pass[df_pass['player'] == player_name]
@@ -244,6 +245,17 @@ def plot_pass_maps(player1, player2, df_pass):
     plot_pass_map_for_player(axs[1], player2, df_pass)
 
     st.pyplot(fig)
+    buffer = io.BytesIO()
+    fig.savefig(buffer, format='png', dpi=300, bbox_inches='tight', facecolor='#22312b')
+    buffer.seek(0)
+
+    # Add a download button in Streamlit
+    st.download_button(
+        label="Download Pass Maps",
+        data=buffer,
+        file_name=f"{player1}_vs_{player2}_pass_maps.png",
+        mime="image/png"
+    )
 
 
 
@@ -261,30 +273,7 @@ df_stats = df_stats.groupby('Player').sum(numeric_only=True).reset_index()
 stats = ['Goals', 'Assists', 'Chances Created','Shots on target','Shots off target', 'Crosses', 'Fouls committed', 'Fouls drawn', 'Corner', 'Saves', 'Interception', 'Pass complete', 'Key Passes', 'Goal Involvement']
 
 
-
-
-# Calculate the top 5 players for the selected stat
-
-
-
-
-
-
-
-
-#   df_radar = fetch_data("FW_Rader")
-
 df_pass = fetch_data("Passes")
-
-
-# Streamlit app
-
-# st.title("Lagos Liga Analysis With MIAS")
-# st.subheader("Match Day Team Stats")
-
-
-
-
 
 # st.sidebar.title('Player Comparison Radar and Passes Chart')
 st.sidebar.header("Radar and Pass Chart Comparison")
@@ -363,6 +352,8 @@ st.header("Player Passes on Football Pitch")
 plot_pass_maps(player1, player2, df_pass)
 
 
+
+
 st.sidebar.header("Select Team and player for Heatmap")
 st.header(" Player Heatmap on Football Pitch")
 # Step 1: Team selection
@@ -388,17 +379,6 @@ pitch.draw(ax=ax)
 plt.gca().invert_yaxis()
 
 
-
-
-# Create the heatmap
-# kde = sns.kdeplot(
-#     player_data['x'],
-#     player_data['y'],
-#     shade=True,
-#     alpha=0.5,
-#     n_levels=10,
-#     cmap='magma'
-# )
 sns.kdeplot(
     x=player_data['x'],
     y=player_data['y'],
@@ -415,6 +395,19 @@ plt.ylim(0, 80)
 
 # Display the heatmap in Streamlit
 st.pyplot(fig_heat)
+import io
+from matplotlib import pyplot as plt
+buffer = io.BytesIO()
+fig_heat.savefig(buffer, format='png', dpi=300, bbox_inches='tight', facecolor=pitch.pitch_color)
+buffer.seek(0)
+
+# Add a download button in Streamlit
+st.download_button(
+    label="Download",
+    data=buffer,
+    file_name=f"{player_heat}_heatmap.png",
+    mime="image/png"
+)
 
 
 st.sidebar.header("Select Stat for Viz top 5")
@@ -433,6 +426,25 @@ ax.set_xticklabels(df_top5['Player'], rotation=45)
 
 
 st.pyplot(figs)
+
+import io
+from matplotlib import pyplot as plt
+
+# ... (your existing code to create the figure and plot data)
+
+# Save the plot to a BytesIO buffer
+buffer = io.BytesIO()
+figs.savefig(buffer, format='png', dpi=300, bbox_inches='tight', facecolor=pitch.pitch_color)
+buffer.seek(0)
+
+# Add a download button in Streamlit
+st.download_button(
+    label="Download Stats",
+    data=buffer,
+    file_name=f"Top 5 {selected_stat}.png",
+    mime="image/png"
+)
+
 
 import streamlit as st
 import pandas as pd
@@ -551,7 +563,7 @@ pitch = Pitch(pitch_type='statsbomb', pitch_color='green', line_color='white', g
 fig, ax = pitch.draw(figsize=(7, 6))
 
 # Title
-ax.set_title(f"{team1} vs {team2} Shot Map", fontsize=20, pad=20)
+ax.set_title(f"{team1} vs {team2} Shot Map", fontsize=10, pad=5)
 
 # Plot Team 1 shots (shooting towards the right goal)
 # Goals
@@ -600,13 +612,30 @@ basic_info_txt = (
     f"{team1} - Shots: {team1_tot_shots} | Goals: {team1_tot_goals} | xG: {team1_tot_xg}\n"
     f"{team2} - Shots: {team2_tot_shots} | Goals: {team2_tot_goals} | xG: {team2_tot_xg}"
 )
-fig.text(0.5, 0.02, basic_info_txt, fontsize=15, ha="center", color="white")
+fig.text(0.5, 0.02, basic_info_txt, fontsize=5, ha="center", color="white")
 
 # Add legend
-ax.legend(labelspacing=1.5, loc="upper center", fontsize=12, bbox_to_anchor=(0.5, -0.05), ncol=2)
+ax.legend(labelspacing=2, loc="upper center", fontsize=5, bbox_to_anchor=(0.5, -0.05), ncol=2)
 
 # Display the plot
 st.pyplot(fig)
+import io
+from matplotlib import pyplot as plt
+
+# ... (your existing code to create the figure and plot data)
+
+# Save the plot to a BytesIO buffer
+buffer = io.BytesIO()
+fig.savefig(buffer, format='png', dpi=300, bbox_inches='tight', facecolor=pitch.pitch_color)
+buffer.seek(0)
+
+# Add a download button in Streamlit
+st.download_button(
+    label="Download",
+    data=buffer,
+    file_name=f"{team1}_vs_{team2}_shot_map.png",
+    mime="image/png"
+)
 
 
 
