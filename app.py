@@ -391,13 +391,22 @@ plt.gca().invert_yaxis()
 
 
 # Create the heatmap
-kde = sns.kdeplot(
-    player_data['x'],
-    player_data['y'],
-    shade=True,
+# kde = sns.kdeplot(
+#     player_data['x'],
+#     player_data['y'],
+#     shade=True,
+#     alpha=0.5,
+#     n_levels=10,
+#     cmap='magma'
+# )
+sns.kdeplot(
+    x=player_data['x'],
+    y=player_data['y'],
+    fill=True,  # Use fill instead of shade
     alpha=0.5,
-    n_levels=10,
-    cmap='magma'
+    levels=10,
+    cmap='magma',
+    ax=ax  # Ensure you pass the Axes to Seaborn
 )
 
 # Set pitch boundaries
