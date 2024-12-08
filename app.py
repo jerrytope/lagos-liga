@@ -297,8 +297,8 @@ st.sidebar.header("Radar and Pass Chart Comparison")
 
 
 team_options = df['Team'].unique()
-team1 = st.sidebar.selectbox("Select Team 1", team_options, index=0)
-team2 = st.sidebar.selectbox("Select Team 2", team_options, index=1)
+team1 = st.sidebar.selectbox("Select Team 1", team_options, index=4)
+team2 = st.sidebar.selectbox("Select Team 2", team_options, index=5)
 
 # Filter the DataFrame based on selected teams
 
@@ -335,7 +335,7 @@ filtered_df_radar = df[columns_to_use]
 players_team1 = df_team1_filtered['Player'].unique().tolist()
 players_team2 = df_team2_filtered['Player'].unique().tolist()
 
-player1 = st.sidebar.selectbox(f"Select Player from {team1}", players_team1, index=0)
+player1 = st.sidebar.selectbox(f"Select Player from {team1}", players_team1, index=1)
 player2 = st.sidebar.selectbox(f"Select Player from {team2}", players_team2, index=1)
 
 
