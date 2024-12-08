@@ -252,13 +252,13 @@ def plot_pass_maps(player1, player2, df_pass):
 
 
 df = fetch_data('PLAYER_STATS')
-df = df.iloc[:, 5:48]
+df = df.iloc[:, 5:60]
 
-df_stats = df.iloc[:,3:22]
+df_stats = df.iloc[:,3:55]
 df_stats = df_stats.groupby('Player').sum(numeric_only=True).reset_index()
 
 
-stats = ['Goals', 'Assists', 'Chances Created','Shots on target','Shots off target', 'Crosses', 'Fouls committed', 'Fouls drawn', 'Corner', 'Saves']
+stats = ['Goals', 'Assists', 'Chances Created','Shots on target','Shots off target', 'Crosses', 'Fouls committed', 'Fouls drawn', 'Corner', 'Saves', 'Interception', 'Pass complete', 'Key Passes', 'Goal Involvement']
 
 
 
@@ -378,7 +378,7 @@ player_heat = st.sidebar.selectbox("Select a player from the team:", team_player
 player_data = df_pass[(df_pass["Team"] == team_heat) & (df_pass["player"] == player_heat)]
 
 # Create the heatmap plot
-fig_heat, ax = plt.subplots(figsize=(9, 6))
+fig_heat, ax = plt.subplots(figsize=(6, 4))
 fig_heat.set_facecolor('#22312b')
 ax.patch.set_facecolor('#22312b')
 
@@ -477,74 +477,150 @@ team2_tot_goals = team2_df_g.shape[0]
 team2_tot_xg = team2_df["statsbomb_xg"].sum().round(2)
 
 # Plotting
-pitch = VerticalPitch(half=True)
+# pitch = VerticalPitch(half=True)
+
+# fig, ax = plt.subplots(1, 2, figsize=(20, 8))
+
+# # Plot for Team 1
+# pitch.draw(ax=ax[0])
+# ax[0].set_title(f"{team1} Shots vs {team2}")
+
+# # Team 1 goals
+# pitch.scatter(team1_df_g["start_location_x"],
+#               team1_df_g["start_location_y"],
+#               s=team1_df_g["statsbomb_xg"]*500+100,
+#               marker="football",
+#               c=team_colors[team1],
+#               ax=ax[0],
+#               label=f"{team1} goals")
+# # Team 1 non-goals
+# pitch.scatter(team1_df_ng["start_location_x"],
+#               team1_df_ng["start_location_y"],
+#               s=team1_df_ng["statsbomb_xg"]*500+100,
+#               c=team_colors[team1],
+#               alpha=0.5,
+#               hatch="//",
+#               edgecolor="#101010",
+#               marker="s",
+#               ax=ax[0],
+#               label=f"{team1} non-goals")
+
+# # Plot for Team 2
+# pitch.draw(ax=ax[1])
+# ax[1].set_title(f"{team2} Shots vs {team1}")
+
+# # Team 2 goals
+# pitch.scatter(team2_df_g["start_location_x"],
+#               team2_df_g["start_location_y"],
+#               s=team2_df_g["statsbomb_xg"]*500+100,
+#               marker="football",
+#               c=team_colors[team2],
+#               ax=ax[1],
+#               label=f"{team2} goals")
+# # Team 2 non-goals
+# pitch.scatter(team2_df_ng["start_location_x"],
+#               team2_df_ng["start_location_y"],
+#               s=team2_df_ng["statsbomb_xg"]*500+100,
+#               c=team_colors[team2],
+#               alpha=0.5,
+#               hatch="//",
+#               edgecolor="#101010",
+#               marker="s",
+#               ax=ax[1],
+#               label=f"{team2} non-goals")
+
+# # Team 1 stats
+# basic_info_txt1 = f"Shots: {team1_tot_shots} | Goals: {team1_tot_goals} | xG: {team1_tot_xg}"
+# ax[0].text(0.5, -0.1, basic_info_txt1, size=15, ha="center", transform=ax[0].transAxes)
+
+# # Team 2 stats
+# basic_info_txt2 = f"Shots: {team2_tot_shots} | Goals: {team2_tot_goals} | xG: {team2_tot_xg}"
+# ax[1].text(0.5, -0.1, basic_info_txt2, size=15, ha="center", transform=ax[1].transAxes)
+
+# # Legends
+# ax[0].legend(labelspacing=1.5, loc="lower center")
+# ax[1].legend(labelspacing=1.5, loc="lower center")
+
+# # Display the plots
+
+# st.pyplot(fig)
+
+# Explicit color definitions
+goal_color = "blue"  # Color for goals
+shot_color = "red"   # Color for non-goals
+
+# Define a green pitch
+pitch = VerticalPitch(half=True, pitch_color="green", line_color="white", linewidth=2)
 
 fig, ax = plt.subplots(1, 2, figsize=(20, 8))
 
 # Plot for Team 1
 pitch.draw(ax=ax[0])
-ax[0].set_title(f"{team1} Shots vs {team2}")
+ax[0].set_title(f"{team1} Shots vs {team2}", fontsize=16, fontweight="bold", color="white")
 
 # Team 1 goals
 pitch.scatter(team1_df_g["start_location_x"],
               team1_df_g["start_location_y"],
-              s=team1_df_g["statsbomb_xg"]*500+100,
+              s=team1_df_g["statsbomb_xg"] * 500 + 200,  # Larger size for boldness
               marker="football",
-              c=team_colors[team1],
+              c=goal_color,
+              edgecolor="black",
+              linewidth=2,
               ax=ax[0],
               label=f"{team1} goals")
+
 # Team 1 non-goals
 pitch.scatter(team1_df_ng["start_location_x"],
               team1_df_ng["start_location_y"],
-              s=team1_df_ng["statsbomb_xg"]*500+100,
-              c=team_colors[team1],
-              alpha=0.5,
-              hatch="//",
-              edgecolor="#101010",
+              s=team1_df_ng["statsbomb_xg"] * 500 + 200,  # Larger size for boldness
+              c=shot_color,
+              alpha=0.7,
+              edgecolor="black",
               marker="s",
+              linewidth=2,
               ax=ax[0],
               label=f"{team1} non-goals")
 
 # Plot for Team 2
 pitch.draw(ax=ax[1])
-ax[1].set_title(f"{team2} Shots vs {team1}")
+ax[1].set_title(f"{team2} Shots vs {team1}", fontsize=16, fontweight="bold", color="white")
 
 # Team 2 goals
 pitch.scatter(team2_df_g["start_location_x"],
               team2_df_g["start_location_y"],
-              s=team2_df_g["statsbomb_xg"]*500+100,
+              s=team2_df_g["statsbomb_xg"] * 500 + 200,  # Larger size for boldness
               marker="football",
-              c=team_colors[team2],
+              c=goal_color,
+              edgecolor="black",
+              linewidth=2,
               ax=ax[1],
               label=f"{team2} goals")
+
 # Team 2 non-goals
 pitch.scatter(team2_df_ng["start_location_x"],
               team2_df_ng["start_location_y"],
-              s=team2_df_ng["statsbomb_xg"]*500+100,
-              c=team_colors[team2],
-              alpha=0.5,
-              hatch="//",
-              edgecolor="#101010",
+              s=team2_df_ng["statsbomb_xg"] * 500 + 200,  # Larger size for boldness
+              c=shot_color,
+              alpha=0.7,
+              edgecolor="black",
               marker="s",
+              linewidth=2,
               ax=ax[1],
               label=f"{team2} non-goals")
 
-# Team 1 stats
+# Team stats
 basic_info_txt1 = f"Shots: {team1_tot_shots} | Goals: {team1_tot_goals} | xG: {team1_tot_xg}"
-ax[0].text(0.5, -0.1, basic_info_txt1, size=15, ha="center", transform=ax[0].transAxes)
+ax[0].text(0.5, -0.1, basic_info_txt1, size=15, ha="center", transform=ax[0].transAxes, color="white", fontweight="bold")
 
-# Team 2 stats
 basic_info_txt2 = f"Shots: {team2_tot_shots} | Goals: {team2_tot_goals} | xG: {team2_tot_xg}"
-ax[1].text(0.5, -0.1, basic_info_txt2, size=15, ha="center", transform=ax[1].transAxes)
+ax[1].text(0.5, -0.1, basic_info_txt2, size=15, ha="center", transform=ax[1].transAxes, color="white", fontweight="bold")
 
 # Legends
-ax[0].legend(labelspacing=1.5, loc="lower center")
-ax[1].legend(labelspacing=1.5, loc="lower center")
+ax[0].legend(labelspacing=1.5, loc="lower center", fontsize=12, frameon=False)
+ax[1].legend(labelspacing=1.5, loc="lower center", fontsize=12, frameon=False)
 
-# Display the plots
-
+# Display the plot
 st.pyplot(fig)
-
 
 data = fetch_data('matches')
 
