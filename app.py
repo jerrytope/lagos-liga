@@ -25,10 +25,15 @@ st.set_page_config( page_title="Lagos Liga Analysis With MIAS")
 
 document_id = '11GOW9_pzJmAAAlvWKFYdh7YCc0lF4U7w'
 
-# @st.cache_data
+@st.cache_data
 def fetch_data(sheet_name):
     url = f'https://docs.google.com/spreadsheets/d/{document_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
     return pd.read_csv(url)
+
+if st.button("Refresh Data"):
+    st.cache_data.clear()
+
+
 
 def create_plot(df, title):
     stats_column = 'stats'
@@ -234,28 +239,61 @@ def plot_pass_map_for_player(ax, player_name, df_pass):
         edgecolor='black',  # Add a border for contrast
     )
 
-def plot_pass_maps(player1, player2, df_pass):
-    fig, axs = plt.subplots(1, 2, figsize=(12, 6))  # Two plots side by side
+# def plot_pass_maps(player1, df_pass):
+#     fig, axs = plt.subplots(1, 2, figsize=(12, 6))  # Two plots side by side
 
+#     fig.set_facecolor('#22312b')
+#     axs[0].patch.set_facecolor('#22312b')
+#     axs[1].patch.set_facecolor('#22312b')
+
+#     plot_pass_map_for_player(axs[0], player1, df_pass)
+#     # plot_pass_map_for_player(axs[1], player2, df_pass)
+
+#     st.pyplot(fig)
+#     buffer = io.BytesIO()
+#     fig.savefig(buffer, format='png', dpi=300, bbox_inches='tight', facecolor='#22312b')
+#     buffer.seek(0)
+
+#     # Add a download button in Streamlit
+#     st.download_button(
+#         label="Download Pass Maps",
+#         data=buffer,
+#         file_name=f"{player1}_vs_{player2}_pass_maps.png",
+#         mime="image/png"
+#     )
+
+
+import matplotlib.pyplot as plt
+import io
+import streamlit as st
+
+def plot_pass_maps(player1, df_pass):
+    # Create a single plot
+    fig, ax = plt.subplots(figsize=(8, 7)) 
+
+    # Set background color
     fig.set_facecolor('#22312b')
-    axs[0].patch.set_facecolor('#22312b')
-    axs[1].patch.set_facecolor('#22312b')
+    ax.patch.set_facecolor('#22312b')
 
-    plot_pass_map_for_player(axs[0], player1, df_pass)
-    plot_pass_map_for_player(axs[1], player2, df_pass)
+    # Plot pass map for the player
+    plot_pass_map_for_player(ax, player1, df_pass)
 
+    # Display in Streamlit
     st.pyplot(fig)
+
+    # Save the figure to a buffer
     buffer = io.BytesIO()
     fig.savefig(buffer, format='png', dpi=300, bbox_inches='tight', facecolor='#22312b')
     buffer.seek(0)
 
     # Add a download button in Streamlit
     st.download_button(
-        label="Download Pass Maps",
+        label="Download Pass Map",
         data=buffer,
-        file_name=f"{player1}_vs_{player2}_pass_maps.png",
+        file_name=f"{player1}_pass_map.png",
         mime="image/png"
     )
+
 
 
 
@@ -276,7 +314,7 @@ stats = ['Goals', 'Assists', 'Chances Created','Shots on target','Shots off targ
 df_pass = fetch_data("Passes")
 
 # st.sidebar.title('Player Comparison Radar and Passes Chart')
-st.sidebar.header("Radar and Pass Chart Comparison")
+st.sidebar.header("Radar Chart Comparison")
 
 # Filter by position
 
@@ -348,8 +386,24 @@ else:
     st.sidebar.warning("Please select two different players.")
 
 
+st.sidebar.header("Pass Charts")
+selected_pass_game = st.sidebar.selectbox("Select a game", df_pass["Game"].unique())
+
+# Filter the DataFrame by selected game
+filtered_pass_game = df_pass[df_pass["Game"] == selected_pass_game]
+
+# Dropdown to select a team
+selected_pass_team = st.sidebar.selectbox("Select a team", options=filtered_pass_game["Team"].unique())
+
+# Filter the DataFrame by selected team
+filtered_pass_team = filtered_pass_game[filtered_pass_game["Team"] == selected_pass_team]
+
+# Dropdowns to select Player 1 and Player 2
+players = filtered_pass_team["player"].unique()
+player1_pass = st.sidebar.selectbox("Select Player 1", options=players, key="player1", index = 1)
+# player2_pass = st.selectbox("Select Player 2", options=players, key="player2", index = 1)
 st.header("Player Passes on Football Pitch")
-plot_pass_maps(player1, player2, df_pass)
+plot_pass_maps(player1_pass, df_pass)
 
 
 
@@ -717,10 +771,10 @@ else:
     team2_results_str = generate_result_string(last_5_team2_games)
 
     # Display results and games
-    st.subheader(f"Last 5 U20-WWC games involving {team1}: {team1_results_str}")
+    st.subheader(f"Last 5 games involving {team1}: {team1_results_str}")
     st.write(display_last_n_games(last_5_team1_games))
 
-    st.subheader(f"Last 5 U20-WWC games involving {team2}: {team2_results_str}")
+    st.subheader(f"Last 5 games involving {team2}: {team2_results_str}")
     st.write(display_last_n_games(last_5_team2_games))
 
 
