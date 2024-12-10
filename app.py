@@ -111,7 +111,7 @@ def create_plot(df, title):
 df2 = fetch_data('TEAM_STATS')
 # df_team = fetch_data('TEAM_STATS')
 
-df2 = df2[['match_id_new','team_name','Goals','Goal Attempts','Shots On Target','Shots Off Target', 'Fouls', 'Corners', 'Yellow Card', 'Red Card','Goalkeeper Saves']]
+df2 = df2[['match_id_new','team_name','Goals','Goal Attempts','Shots On Target','Shots Off Target', 'Fouls', 'Corners',  'Yellow Card', 'Red Card','Goalkeeper Saves', 'Crosses','Shootout goals']]
 
 
 match_id = df2['match_id_new'].unique()
@@ -386,41 +386,88 @@ else:
     st.sidebar.warning("Please select two different players.")
 
 
-st.sidebar.header("Pass Charts")
-selected_pass_game = st.sidebar.selectbox("Select a game", df_pass["Game"].unique())
+# st.sidebar.header("Pass Charts")
 
-# Filter the DataFrame by selected game
-filtered_pass_game = df_pass[df_pass["Game"] == selected_pass_game]
+
+# selected_pass_game = st.sidebar.selectbox("Select a game", df_pass["Game"].unique())
+
+# # Filter the DataFrame by selected game
+# filtered_pass_game = df_pass[df_pass["Game"] == selected_pass_game]
+
+# # Dropdown to select a team
+# selected_pass_team = st.sidebar.selectbox("Select a team", options=filtered_pass_game["Team"].unique())
+
+# # Filter the DataFrame by selected team
+# filtered_pass_team = filtered_pass_game[filtered_pass_game["Team"] == selected_pass_team]
+
+# # Dropdowns to select Player 1 and Player 2
+# players = filtered_pass_team["player"].unique()
+# player1_pass = st.sidebar.selectbox("Select Player 1", options=players, key="player1", index = 1)
+# # player2_pass = st.selectbox("Select Player 2", options=players, key="player2", index = 1)
+# st.header("Player Passes on Football Pitch")
+# plot_pass_maps(player1_pass, df_pass)
+
+
+st.sidebar.header("Pass Charts")
+
+# Add "All games" option to the game selection
+game_options = ["All games"] + df_pass["Game"].unique().tolist()
+selected_pass_game = st.sidebar.selectbox("Select a game", game_options)
 
 # Dropdown to select a team
-selected_pass_team = st.sidebar.selectbox("Select a team", options=filtered_pass_game["Team"].unique())
+if selected_pass_game == "All games":
+    # If "All games" is selected, get unique teams across all games
+    team_options = df_pass["Team"].unique()
+else:
+    # Filter by selected game and get unique teams
+    filtered_pass_game = df_pass[df_pass["Game"] == selected_pass_game]
+    team_options = filtered_pass_game["Team"].unique()
 
-# Filter the DataFrame by selected team
-filtered_pass_team = filtered_pass_game[filtered_pass_game["Team"] == selected_pass_team]
+selected_pass_team = st.sidebar.selectbox("Select a team", options=team_options)
 
-# Dropdowns to select Player 1 and Player 2
+# Dropdown to select a player
+if selected_pass_game == "All games":
+    # Use all data for the selected team
+    filtered_pass_team = df_pass[df_pass["Team"] == selected_pass_team]
+else:
+    # Filter by game and team
+    filtered_pass_team = filtered_pass_game[filtered_pass_game["Team"] == selected_pass_team]
+
 players = filtered_pass_team["player"].unique()
-player1_pass = st.sidebar.selectbox("Select Player 1", options=players, key="player1", index = 1)
-# player2_pass = st.selectbox("Select Player 2", options=players, key="player2", index = 1)
+player1_pass = st.sidebar.selectbox("Select Player 1", options=players, key="player1", index=0)
+
 st.header("Player Passes on Football Pitch")
-plot_pass_maps(player1_pass, df_pass)
+
+# Plot pass maps using the filtered player data
+plot_pass_maps(player1_pass, filtered_pass_team)
 
 
 
 
-st.sidebar.header("Select Team and player for Heatmap")
-st.header(" Player Heatmap on Football Pitch")
-# Step 1: Team selection
+
+st.sidebar.header("Select Team and Player for Heatmap")
+st.header("Player Heatmap on Football Pitch")
+
+# Step 1: Game selection with "All games" option
+game_options = ["All games"] + df_pass["Game"].unique().tolist()
+selected_heat_game = st.sidebar.selectbox("Select a game", game_options, key="heatmap_game")
+
+# Step 2: Team selection
 team_heat = st.sidebar.selectbox("Select a team:", df_pass["Team"].unique())
 
-# Filter players based on the selected team
+# Step 3: Filter players based on the selected team
 team_players_heat = df_pass[df_pass["Team"] == team_heat]["player"].unique()
-
-# Step 2: Player selection
 player_heat = st.sidebar.selectbox("Select a player from the team:", team_players_heat)
 
-# Filter data for the selected player
-player_data = df_pass[(df_pass["Team"] == team_heat) & (df_pass["player"] == player_heat)]
+# Step 4: Filtering logic
+if selected_heat_game == "All games":
+    # Use all data for the selected team and player
+    player_data = df_pass[(df_pass["Team"] == team_heat) & (df_pass["player"] == player_heat)]
+else:
+    # Filter data for the selected game, team, and player
+    player_data = df_pass[(df_pass["Game"] == selected_heat_game) &
+                          (df_pass["Team"] == team_heat) &
+                          (df_pass["player"] == player_heat)]
 
 # Create the heatmap plot
 fig_heat, ax = plt.subplots(figsize=(6, 4))
@@ -432,15 +479,15 @@ pitch = Pitch(pitch_type='statsbomb', pitch_color='#22312b', line_color='#c7d5cc
 pitch.draw(ax=ax)
 plt.gca().invert_yaxis()
 
-
+# Generate heatmap
 sns.kdeplot(
     x=player_data['x'],
     y=player_data['y'],
-    fill=True,  # Use fill instead of shade
+    fill=True,
     alpha=0.5,
     levels=10,
     cmap='magma',
-    ax=ax  # Ensure you pass the Axes to Seaborn
+    ax=ax
 )
 
 # Set pitch boundaries
@@ -449,6 +496,9 @@ plt.ylim(0, 80)
 
 # Display the heatmap in Streamlit
 st.pyplot(fig_heat)
+
+
+
 import io
 from matplotlib import pyplot as plt
 buffer = io.BytesIO()
@@ -512,6 +562,8 @@ df_new = fetch_data("shoot")
 # Streamlit interface
 st.sidebar.header("Team Shot Analysis")
 
+
+
 # Get unique teams from the data
 teams = df_new["team"].unique()
 
@@ -542,74 +594,7 @@ team2_tot_shots = team2_df.shape[0]
 team2_tot_goals = team2_df_g.shape[0]
 team2_tot_xg = team2_df["statsbomb_xg"].sum().round(2)
 
-# Plotting
-# pitch = VerticalPitch(half=True, pitch_color="green", line_color="white")
 
-# fig, ax = plt.subplots(1, 2, figsize=(20, 8))
-
-# # Plot for Team 1
-# pitch.draw(ax=ax[0])
-# ax[0].set_title(f"{team1} Shots vs {team2}")
-
-# # Team 1 goals
-# pitch.scatter(team1_df_g["start_location_x"],
-#               team1_df_g["start_location_y"],
-#               s=team1_df_g["statsbomb_xg"]*500+100,
-#               marker="football",
-#               c="blue",
-#               ax=ax[0],
-#               label=f"{team1} goals")
-# # Team 1 non-goals
-# pitch.scatter(team1_df_ng["start_location_x"],
-#               team1_df_ng["start_location_y"],
-#               s=team1_df_ng["statsbomb_xg"]*500+100,
-#               c="red",
-#               alpha=0.5,
-#               hatch="//",
-#               edgecolor="#101010",
-#               marker="s",
-#               ax=ax[0],
-#               label=f"{team1} non-goals")
-
-# # Plot for Team 2
-# pitch.draw(ax=ax[1])
-# ax[1].set_title(f"{team2} Shots vs {team1}")
-
-# # Team 2 goals
-# pitch.scatter(team2_df_g["start_location_x"],
-#               team2_df_g["start_location_y"],
-#               s=team2_df_g["statsbomb_xg"]*500+100,
-#               marker="football",
-#               c="blue",
-#               ax=ax[1],
-#               label=f"{team2} goals")
-# # Team 2 non-goals
-# pitch.scatter(team2_df_ng["start_location_x"],
-#               team2_df_ng["start_location_y"],
-#               s=team2_df_ng["statsbomb_xg"]*500+100,
-#               c='red',
-#               alpha=0.5,
-#               hatch="//",
-#               edgecolor="#101010",
-#               marker="s",
-#               ax=ax[1],
-#               label=f"{team2} non-goals")
-
-# # Team 1 stats
-# basic_info_txt1 = f"Shots: {team1_tot_shots} | Goals: {team1_tot_goals} | xG: {team1_tot_xg}"
-# ax[0].text(0.5, -0.1, basic_info_txt1, size=15, ha="center", transform=ax[0].transAxes)
-
-# # Team 2 stats
-# basic_info_txt2 = f"Shots: {team2_tot_shots} | Goals: {team2_tot_goals} | xG: {team2_tot_xg}"
-# ax[1].text(0.5, -0.1, basic_info_txt2, size=15, ha="center", transform=ax[1].transAxes)
-
-# # Legends
-# ax[0].legend(labelspacing=1.5, loc="lower center")
-# ax[1].legend(labelspacing=1.5, loc="lower center")
-
-# # Display the plots
-
-# st.pyplot(fig)
 
 pitch = Pitch(pitch_type='statsbomb', pitch_color='green', line_color='white', goal_type='box')
 
