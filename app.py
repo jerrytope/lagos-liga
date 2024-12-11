@@ -15,20 +15,20 @@ st.set_page_config( page_title="Lagos Liga Analysis With MIAS")
 # def fetch_data(sheet_name):
 #     url = f'https://docs.google.com/spreadsheets/d/{document_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
     # return pd.read_csv(url)
-# document_id = '1XDRCoTNodcU28nk4HYxOzjBJzt_e5gEo'
-
-# # @st.cache_data
-# def fetch_data(sheet_name):
-#     # Construct the URL to fetch data as a CSV
-#     url = f'https://docs.google.com/spreadsheets/d/{document_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
-#     return pd.read_csv(url)
-
-document_id = '11GOW9_pzJmAAAlvWKFYdh7YCc0lF4U7w'
+document_id = '1XDRCoTNodcU28nk4HYxOzjBJzt_e5gEo'
 
 @st.cache_data
 def fetch_data(sheet_name):
+    # Construct the URL to fetch data as a CSV
     url = f'https://docs.google.com/spreadsheets/d/{document_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
     return pd.read_csv(url)
+
+# document_id = '11GOW9_pzJmAAAlvWKFYdh7YCc0lF4U7w'
+
+# @st.cache_data
+# def fetch_data(sheet_name):
+#     url = f'https://docs.google.com/spreadsheets/d/{document_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
+#     return pd.read_csv(url)
 
 if st.button("Refresh Data"):
     st.cache_data.clear()
@@ -110,8 +110,9 @@ def create_plot(df, title):
 
 df2 = fetch_data('TEAM_STATS')
 # df_team = fetch_data('TEAM_STATS')
+# df2 = df2[['match_id_new','team_name','Goals','Goal Attempts','Shots On Target','Shots Off Target', 'Fouls', 'Corners',  'Yellow Card', 'Red Card','Goalkeeper Saves', 'Crosses','Shootout goals']]
 
-df2 = df2[['match_id_new','team_name','Goals','Goal Attempts','Shots On Target','Shots Off Target', 'Fouls', 'Corners',  'Yellow Card', 'Red Card','Goalkeeper Saves', 'Crosses','Shootout goals']]
+df2 = df2[['match_id_new','team_name','Goals','Goal Attempts']]
 
 
 match_id = df2['match_id_new'].unique()
@@ -439,10 +440,16 @@ player1_pass = st.sidebar.selectbox("Select Player 1", options=players, key="pla
 st.header("Player Passes on Football Pitch")
 
 # Plot pass maps using the filtered player data
-plot_pass_maps(player1_pass, filtered_pass_team)
+# plot_pass_maps(player1_pass, filtered_pass_team)
 
-
-
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+import matplotlib.pyplot as plt
+def add_logo_on_heatmap(ax, logo_path, zoom=0.05, x_pos=0.85, y_pos=0.85, alpha=0.3):
+    """Add a small, faint logo on the heatmap."""
+    logo_img = plt.imread(logo_path)
+    image_box = OffsetImage(logo_img, zoom=zoom, alpha=alpha)
+    ab = AnnotationBbox(image_box, (x_pos, y_pos), frameon=False, xycoords='axes fraction')
+    ax.add_artist(ab)
 
 
 st.sidebar.header("Select Team and Player for Heatmap")
@@ -473,6 +480,7 @@ else:
 fig_heat, ax = plt.subplots(figsize=(6, 4))
 fig_heat.set_facecolor('#22312b')
 ax.patch.set_facecolor('#22312b')
+ax.set_title(f'Pass Map for {player_heat}', color='white', fontsize=10, pad=20)
 
 # Create the pitch
 pitch = Pitch(pitch_type='statsbomb', pitch_color='#22312b', line_color='#c7d5cc')
@@ -493,8 +501,9 @@ sns.kdeplot(
 # Set pitch boundaries
 plt.xlim(0, 120)
 plt.ylim(0, 80)
-
+add_logo_on_heatmap(ax, "lagos-liga-blue.png", zoom=0.02, x_pos=0.5, y_pos=0.5, alpha=0.15)
 # Display the heatmap in Streamlit
+# ax.set_title(f'Pass Map for {player_name}', color='white', fontsize=10, pad=20)
 st.pyplot(fig_heat)
 
 
@@ -528,7 +537,7 @@ ax.set_xlabel('Player')
 ax.set_ylabel(selected_stat)
 ax.set_xticklabels(df_top5['Player'], rotation=45)
 
-
+add_logo_on_heatmap(ax, "lagos-liga-blue.png", zoom=0.02, x_pos=0.5, y_pos=0.5, alpha=0.15)
 st.pyplot(figs)
 
 import io
@@ -657,15 +666,15 @@ fig.text(0.5, 0.02, basic_info_txt, fontsize=5, ha="center", color="white")
 ax.legend(labelspacing=2, loc="upper center", fontsize=5, bbox_to_anchor=(0.5, -0.05), ncol=2)
 
 # Display the plot
+add_logo_on_heatmap(ax, "lagos-liga-blue.png", zoom=0.02, x_pos=0.5, y_pos=0.5, alpha=0.15)
 st.pyplot(fig)
 import io
 from matplotlib import pyplot as plt
 
 # ... (your existing code to create the figure and plot data)
-
 # Save the plot to a BytesIO buffer
 buffer = io.BytesIO()
-fig.savefig(buffer, format='png', dpi=300, bbox_inches='tight', facecolor=pitch.pitch_color)
+fig.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
 buffer.seek(0)
 
 # Add a download button in Streamlit
