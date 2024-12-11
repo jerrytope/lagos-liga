@@ -15,20 +15,20 @@ st.set_page_config( page_title="Lagos Liga Analysis With MIAS")
 # def fetch_data(sheet_name):
 #     url = f'https://docs.google.com/spreadsheets/d/{document_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
     # return pd.read_csv(url)
-document_id = '1XDRCoTNodcU28nk4HYxOzjBJzt_e5gEo'
-
-@st.cache_data
-def fetch_data(sheet_name):
-    # Construct the URL to fetch data as a CSV
-    url = f'https://docs.google.com/spreadsheets/d/{document_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
-    return pd.read_csv(url)
-
-# document_id = '11GOW9_pzJmAAAlvWKFYdh7YCc0lF4U7w'
+# document_id = '1XDRCoTNodcU28nk4HYxOzjBJzt_e5gEo'
 
 # @st.cache_data
 # def fetch_data(sheet_name):
+#     # Construct the URL to fetch data as a CSV
 #     url = f'https://docs.google.com/spreadsheets/d/{document_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
 #     return pd.read_csv(url)
+
+document_id = '11GOW9_pzJmAAAlvWKFYdh7YCc0lF4U7w'
+
+@st.cache_data
+def fetch_data(sheet_name):
+    url = f'https://docs.google.com/spreadsheets/d/{document_id}/gviz/tq?tqx=out:csv&sheet={sheet_name}'
+    return pd.read_csv(url)
 
 if st.button("Refresh Data"):
     st.cache_data.clear()
@@ -110,9 +110,9 @@ def create_plot(df, title):
 
 df2 = fetch_data('TEAM_STATS')
 # df_team = fetch_data('TEAM_STATS')
-# df2 = df2[['match_id_new','team_name','Goals','Goal Attempts','Shots On Target','Shots Off Target', 'Fouls', 'Corners',  'Yellow Card', 'Red Card','Goalkeeper Saves', 'Crosses','Shootout goals']]
+df2 = df2[['match_id_new','team_name','Goals','Goal Attempts','Shots On Target','Shots Off Target', 'Fouls', 'Corners',  'Yellow Card', 'Red Card','Goalkeeper Saves', 'Crosses','Shootout goals']]
 
-df2 = df2[['match_id_new','team_name','Goals','Goal Attempts']]
+# df2 = df2[['match_id_new','team_name','Goals','Goal Attempts']]
 
 
 match_id = df2['match_id_new'].unique()
