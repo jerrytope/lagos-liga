@@ -4,6 +4,16 @@ import plotly.graph_objs as go
 import mplsoccer
 from mplsoccer.pitch import Pitch
 
+import matplotlib.pyplot as plt
+import pandas as pd
+import matplotlib.pyplot as plt
+from mplsoccer.pitch import Pitch
+import seaborn as sns
+from matplotlib.lines import Line2D 
+from matplotlib.lines import Line2D  # Import Line2D for custom legend elements
+import io
+from matplotlib import pyplot as plt
+
 # Google Sheets document ID
 # https://docs.google.com/spreadsheets/d/11GOW9_pzJmAAAlvWKFYdh7YCc0lF4U7w/edit?gid=306235239#gid=306235239
 
@@ -33,7 +43,27 @@ def fetch_data(sheet_name):
 if st.button("Refresh Data"):
     st.cache_data.clear()
 
+def download_plot(fig, file_name, mime="image/png", facecolor=None):
+    """Downloads a Matplotlib figure as a PNG image.
 
+    Args:
+        fig (matplotlib.figure.Figure): The figure to download.
+        file_name (str): The desired filename for the downloaded image.
+        mime (str, optional): The MIME type of the image. Defaults to "image/png".
+        facecolor (str, optional): The background color for the plot (used for heatmaps). Defaults to None.
+    """
+    buffer = io.BytesIO()
+    if facecolor:
+        # Set background color for heatmaps
+        fig.set_facecolor(facecolor)
+    fig.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
+    buffer.seek(0)
+    st.download_button(
+        label="Download",
+        data=buffer,
+        file_name=file_name,
+        mime=mime
+    )
 
 def create_plot(df, title):
     stats_column = 'stats'
@@ -128,13 +158,27 @@ st.subheader("Match Day Team Stats")
 st.plotly_chart(fig1)
 
 
+df = fetch_data('PLAYER_STATS')
+df = df.iloc[:, 5:60]
+
+df_stats = df.iloc[:,3:55]
+df_stats = df_stats.groupby('Player').sum(numeric_only=True).reset_index()
+
+
+stats = ['Goals', 'Assists', 'Chances Created','Shots on target','Shots off target', 'Crosses', 'Fouls committed', 'Fouls drawn', 'Corner', 'Saves', 'Interception', 'Pass complete', 'Key Passes', 'Goal Involvement']
+
 
 def create_radar_chart(df, player1, player2):
+    import plotly.graph_objects as go
+
+    # Extract metric columns
     metrics = df.columns[1:].tolist()
     
-    player1_data = df[df['Player'] == player1].iloc[0, 1:].tolist()
-    player2_data = df[df['Player'] == player2].iloc[0, 1:].tolist()
+    # Sum data across all games for each player
+    player1_data = df[df['Player'] == player1].iloc[:, 1:].sum().tolist()
+    player2_data = df[df['Player'] == player2].iloc[:, 1:].sum().tolist()
 
+    # Create traces
     trace1 = go.Scatterpolar(
         r=player1_data,
         theta=metrics,
@@ -151,59 +195,73 @@ def create_radar_chart(df, player1, player2):
         marker=dict(color='red')
     )
 
+    # Layout configuration
     layout = go.Layout(
         polar=dict(
             radialaxis=dict(
                 visible=True,
-                range=[0, 100]
+                range=[0, max(max(player1_data), max(player2_data)) * 1.2]  # Adjust range dynamically
             )
         ),
         showlegend=True
     )
 
+    # Combine traces and create figure
     fig = go.Figure(data=[trace1, trace2], layout=layout)
     return fig
 
-import matplotlib.pyplot as plt
-import pandas as pd
-import matplotlib.pyplot as plt
-from mplsoccer.pitch import Pitch
-import seaborn as sns
 
-# def plot_pass_map_for_player(ax, player_name, df_pass):
-#     # Filter the pass DataFrame for the selected player
-#     player_pass_df = df_pass[df_pass['player'] == player_name]
+# Streamlit sidebar inputs
+st.sidebar.header("Radar Chart Comparison")
+team_options = df['Team'].unique()
+team1 = st.sidebar.selectbox("Select Team 1", team_options, index=4)
+team2 = st.sidebar.selectbox("Select Team 2", team_options, index=5)
 
-#     # Create the pitch
-#     pitch = Pitch(pitch_type='statsbomb', pitch_color='#22312b', line_color='#c7d5cc')
-#     pitch.draw(ax=ax)
-#     ax.set_title(f'Pass Map for {player_name}', color='white', fontsize=10, pad=20)
-#     ax.invert_yaxis()
+# Filter teams and position
+position_options_team = df['POS'].unique()
+selected_position = st.sidebar.selectbox("Select Position", position_options_team)
 
-#     # Plot each pass
-#     for _, row in player_pass_df.iterrows():
-#         if row['outcome'] == 'successful':
-#             ax.plot((row['x'], row['endX']), (row['y'], row['endY']), color='green')
-#             ax.scatter(row['x'], row['y'], color='green')
-#         elif row['outcome'] == 'unsuccessful':
-#             ax.plot((row['x'], row['endX']), (row['y'], row['endY']), color='red')
-#             ax.scatter(row['x'], row['y'], color='red')
+# Define position-specific columns
+if selected_position == 'GK':
+    columns_to_use = ['Player', 'Clean sheet', 'Saves', 'Crosses Claimed', 'Clearances']
+elif selected_position == 'FW':
+    columns_to_use = ['Player', 'Goals', 'Shots on target', 'Assists', 'Chances Created', 'Pass complete', 'Key Passes']
+elif selected_position == 'MF':
+    columns_to_use = ['Player', 'Goals', 'Assists', 'Tackles', 'Interception', 'Chances Created', 'Key Passes', 'Fouls committed', 'Blocks', 'Goal Involvement']
+elif selected_position == 'DF':
+    columns_to_use = ['Player', 'Goals', 'Tackles', 'Interception', 'Blocks', 'Clearances', 'Fouls committed', 'Defensive Contribution', 'Error']
 
-# def plot_pass_maps(player1, player2, df_pass):
-#     fig, axs = plt.subplots(1, 2, figsize=(12, 6))  # Two plots side by side
+# Filter DataFrame based on teams and positions
+df_team1_filtered = df[df['Team'] == team1]
+df_team2_filtered = df[df['Team'] == team2]
+filtered_df_radar = df[df['POS'] == selected_position][columns_to_use]
 
-#     fig.set_facecolor('#22312b')
-#     axs[0].patch.set_facecolor('#22312b')
-#     axs[1].patch.set_facecolor('#22312b')
+# Get unique players from filtered teams
+players_team1 = df_team1_filtered['Player'].unique().tolist()
+players_team2 = df_team2_filtered['Player'].unique().tolist()
 
-#     plot_pass_map_for_player(axs[0], player1, df_pass)
-#     plot_pass_map_for_player(axs[1], player2, df_pass)
+# Sidebar player selection
+player1 = st.sidebar.selectbox(f"Select Player from {team1}", players_team1, index=1)
+player2 = st.sidebar.selectbox(f"Select Player from {team2}", players_team2, index=1)
 
-#     st.pyplot(fig)
-from matplotlib.lines import Line2D 
-from matplotlib.lines import Line2D  # Import Line2D for custom legend elements
-import io
-from matplotlib import pyplot as plt
+# Ensure two different players are selected
+if player1 != player2:
+    # Filter data for selected players and sum their metrics
+    player1_value = filtered_df_radar[filtered_df_radar['Player'] == player1].groupby('Player').sum()
+    player2_value = filtered_df_radar[filtered_df_radar['Player'] == player2].groupby('Player').sum()
+
+    # Combine data for display
+    merged_df = pd.concat([player1_value, player2_value], axis=0)
+    st.write(merged_df)
+
+    # Display radar chart
+    st.header('Radar Chart Comparison')
+    fig = create_radar_chart(filtered_df_radar, player1, player2)
+    st.plotly_chart(fig)
+else:
+    st.sidebar.warning("Please select two different players.")
+
+
 def plot_pass_map_for_player(ax, player_name, df_pass):
     # Filter the pass DataFrame for the selected player
     player_pass_df = df_pass[df_pass['player'] == player_name]
@@ -240,30 +298,6 @@ def plot_pass_map_for_player(ax, player_name, df_pass):
         edgecolor='black',  # Add a border for contrast
     )
 
-# def plot_pass_maps(player1, df_pass):
-#     fig, axs = plt.subplots(1, 2, figsize=(12, 6))  # Two plots side by side
-
-#     fig.set_facecolor('#22312b')
-#     axs[0].patch.set_facecolor('#22312b')
-#     axs[1].patch.set_facecolor('#22312b')
-
-#     plot_pass_map_for_player(axs[0], player1, df_pass)
-#     # plot_pass_map_for_player(axs[1], player2, df_pass)
-
-#     st.pyplot(fig)
-#     buffer = io.BytesIO()
-#     fig.savefig(buffer, format='png', dpi=300, bbox_inches='tight', facecolor='#22312b')
-#     buffer.seek(0)
-
-#     # Add a download button in Streamlit
-#     st.download_button(
-#         label="Download Pass Maps",
-#         data=buffer,
-#         file_name=f"{player1}_vs_{player2}_pass_maps.png",
-#         mime="image/png"
-#     )
-
-
 import matplotlib.pyplot as plt
 import io
 import streamlit as st
@@ -281,133 +315,15 @@ def plot_pass_maps(player1, df_pass):
 
     # Display in Streamlit
     st.pyplot(fig)
-
-    # Save the figure to a buffer
-    buffer = io.BytesIO()
-    fig.savefig(buffer, format='png', dpi=300, bbox_inches='tight', facecolor='#22312b')
-    buffer.seek(0)
-
-    # Add a download button in Streamlit
-    st.download_button(
-        label="Download Pass Map",
-        data=buffer,
-        file_name=f"{player1}_pass_map.png",
-        mime="image/png"
-    )
+    download_plot(fig, f"{player1}_pass_map.png")
 
 
 
 
 
-
-
-
-df = fetch_data('PLAYER_STATS')
-df = df.iloc[:, 5:60]
-
-df_stats = df.iloc[:,3:55]
-df_stats = df_stats.groupby('Player').sum(numeric_only=True).reset_index()
-
-
-stats = ['Goals', 'Assists', 'Chances Created','Shots on target','Shots off target', 'Crosses', 'Fouls committed', 'Fouls drawn', 'Corner', 'Saves', 'Interception', 'Pass complete', 'Key Passes', 'Goal Involvement']
 
 
 df_pass = fetch_data("Passes")
-
-# st.sidebar.title('Player Comparison Radar and Passes Chart')
-st.sidebar.header("Radar Chart Comparison")
-
-# Filter by position
-
-
-# Filter the radar DataFrame by the selected position
-
-
-
-team_options = df['Team'].unique()
-team1 = st.sidebar.selectbox("Select Team 1", team_options, index=4)
-team2 = st.sidebar.selectbox("Select Team 2", team_options, index=5)
-
-# Filter the DataFrame based on selected teams
-
-position_options_team = df['POS'].unique()
-selected_position = st.sidebar.selectbox("Select Position", position_options_team)
-
-# if selected_position == 'GK':
-#     columns_to_use = ['Player', 'Save Percentage', 'Clean Sheets','Goal Conceded', 'Saves', 'Crosses Stopped', 'Penalty saves', 'Cross Clamed', 'Sweeper actions' ]                 
-# elif selected_position == 'FW':
-#     columns_to_use = ['Player', 'Goals', 'Shots on target', 'Conversion rate', 'Assists','Goal involvement', 'Penalties won', 'Attacking contribution', 'Minutes per goal']
-# elif selected_position == 'MF':
-#     columns_to_use = ['Player', 'Goals', 'Assists', 'Tackles', 'Interceptions', 'Chances created', 'Defensive errors','Fouls committed','Blocks','Goal involvement']      
-# elif selected_position == 'DF':
-#     columns_to_use = ['Player', 'Goals', 'Tackles', 'Fouls Won', 'Blocks', 'Minutes per card','Goal involvement', 'Defensive contribution', 'Defensive errors']        
-
-
-if selected_position == 'GK':
-    columns_to_use = ['Player',  'Clean sheet', 'Saves', 'Crosses Claimed', 'Clearances']                 
-elif selected_position == 'FW':
-    columns_to_use = ['Player', 'Goals', 'Shots on target',  'Assists', 'Chances Created', 'Pass complete', 'Key Passes']#'Attacking Contribution'
-elif selected_position == 'MF':
-    columns_to_use = ['Player', 'Goals', 'Assists', 'Tackles', 'Interceptions', 'Chances created', 'Key Passes','Fouls committed','Blocks','Goal involvement']      
-elif selected_position == 'DF':
-    columns_to_use = ['Player', 'Goals', 'Tackles', 'Interceptions', 'Blocks', 'Clearances','Fouls committed', 'Defensive Contribution', 'Error']        
-
-df_team1_filtered = df[df['Team'] == team1]
-df_team2_filtered = df[df['Team'] == team2]
-
-
-filtered_df_radar = df[df['POS'] == selected_position]
-filtered_df_radar = df[columns_to_use]
-
-# Get all unique players from the selected teams
-players_team1 = df_team1_filtered['Player'].unique().tolist()
-players_team2 = df_team2_filtered['Player'].unique().tolist()
-
-player1 = st.sidebar.selectbox(f"Select Player from {team1}", players_team1, index=1)
-player2 = st.sidebar.selectbox(f"Select Player from {team2}", players_team2, index=1)
-
-
-
-# Ensure two different players are selected
-if player1 != player2:
-    # st.sidebar.subheader('Player Stats')
-    player1_value = filtered_df_radar[filtered_df_radar['Player'] == player1]
-    player2_value = filtered_df_radar[filtered_df_radar['Player'] == player2]
-    
-    # Merge player data for display and plotting
-    merged_df = pd.concat([player1_value, player2_value], ignore_index=True)
-    st.write(merged_df)
-    # st.dataframe(merged_df, use_container_width=True)  
-
-
-    st.header('Radar Chart Comparison')
-    fig = create_radar_chart(filtered_df_radar, player1, player2)
-    st.plotly_chart(fig)
-else:
-    st.sidebar.warning("Please select two different players.")
-
-
-# st.sidebar.header("Pass Charts")
-
-
-# selected_pass_game = st.sidebar.selectbox("Select a game", df_pass["Game"].unique())
-
-# # Filter the DataFrame by selected game
-# filtered_pass_game = df_pass[df_pass["Game"] == selected_pass_game]
-
-# # Dropdown to select a team
-# selected_pass_team = st.sidebar.selectbox("Select a team", options=filtered_pass_game["Team"].unique())
-
-# # Filter the DataFrame by selected team
-# filtered_pass_team = filtered_pass_game[filtered_pass_game["Team"] == selected_pass_team]
-
-# # Dropdowns to select Player 1 and Player 2
-# players = filtered_pass_team["player"].unique()
-# player1_pass = st.sidebar.selectbox("Select Player 1", options=players, key="player1", index = 1)
-# # player2_pass = st.selectbox("Select Player 2", options=players, key="player2", index = 1)
-# st.header("Player Passes on Football Pitch")
-# plot_pass_maps(player1_pass, df_pass)
-
 
 st.sidebar.header("Pass Charts")
 
@@ -440,87 +356,71 @@ player1_pass = st.sidebar.selectbox("Select Player 1", options=players, key="pla
 st.header("Player Passes on Football Pitch")
 
 # Plot pass maps using the filtered player data
-# plot_pass_maps(player1_pass, filtered_pass_team)
+plot_pass_maps(player1_pass, filtered_pass_team)
 
-from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-import matplotlib.pyplot as plt
-def add_logo_on_heatmap(ax, logo_path, zoom=0.05, x_pos=0.85, y_pos=0.85, alpha=0.3):
-    """Add a small, faint logo on the heatmap."""
-    logo_img = plt.imread(logo_path)
-    image_box = OffsetImage(logo_img, zoom=zoom, alpha=alpha)
-    ab = AnnotationBbox(image_box, (x_pos, y_pos), frameon=False, xycoords='axes fraction')
-    ax.add_artist(ab)
+from matplotlib.lines import Line2D
+import matplotlib.colors as mcolors
+def create_team_heatmap(df_pass):
+    st.sidebar.header("Select Team for Heatmap")
+    st.header("Team Heatmap on Football Pitch")
 
+    game_options = ["All Games"] + df_pass["Game"].unique().tolist()
+    selected_game = st.sidebar.selectbox("Select Game:", game_options)
 
-st.sidebar.header("Select Team and Player for Heatmap")
-st.header("Player Heatmap on Football Pitch")
+    # Step 1: Team selection
+    team_heat = st.sidebar.selectbox("Select a team:", df_pass["Team"].unique())
 
-# Step 1: Game selection with "All games" option
-game_options = ["All games"] + df_pass["Game"].unique().tolist()
-selected_heat_game = st.sidebar.selectbox("Select a game", game_options, key="heatmap_game")
+    # Step 2: Game selection (add a new filter)
+    
 
-# Step 2: Team selection
-team_heat = st.sidebar.selectbox("Select a team:", df_pass["Team"].unique())
+    # Filter data for the selected team and game
+    if selected_game == "All Games":
+        team_data = df_pass[df_pass["Team"] == team_heat]
+    else:
+        team_data = df_pass[(df_pass["Team"] == team_heat) & (df_pass["Game"] == selected_game)]
 
-# Step 3: Filter players based on the selected team
-team_players_heat = df_pass[df_pass["Team"] == team_heat]["player"].unique()
-player_heat = st.sidebar.selectbox("Select a player from the team:", team_players_heat)
+    # Create the heatmap plot
+    fig_heat, ax = plt.subplots(figsize=(6, 4))
+    fig_heat.set_facecolor('#22312b')
+    ax.patch.set_facecolor('#22312b')
+    ax.set_title(f'{team_heat} Team Heatmap - {selected_game}', color='white', fontsize=10, pad=20)
 
-# Step 4: Filtering logic
-if selected_heat_game == "All games":
-    # Use all data for the selected team and player
-    player_data = df_pass[(df_pass["Team"] == team_heat) & (df_pass["player"] == player_heat)]
-else:
-    # Filter data for the selected game, team, and player
-    player_data = df_pass[(df_pass["Game"] == selected_heat_game) &
-                          (df_pass["Team"] == team_heat) &
-                          (df_pass["player"] == player_heat)]
+    # Create the pitch
+    pitch = Pitch(pitch_type='statsbomb', pitch_color='#22312b', line_color='#c7d5cc')
+    pitch.draw(ax=ax)
+    plt.gca().invert_yaxis()
 
-# Create the heatmap plot
-fig_heat, ax = plt.subplots(figsize=(6, 4))
-fig_heat.set_facecolor('#22312b')
-ax.patch.set_facecolor('#22312b')
-ax.set_title(f'Pass Map for {player_heat}', color='white', fontsize=10, pad=20)
+    custom_colors = [(0, 'purple'), (0.5, 'yellow'), (1, 'red')]
 
-# Create the pitch
-pitch = Pitch(pitch_type='statsbomb', pitch_color='#22312b', line_color='#c7d5cc')
-pitch.draw(ax=ax)
-plt.gca().invert_yaxis()
+    # Create custom colormap
+    custom_cmap = mcolors.LinearSegmentedColormap.from_list("", custom_colors)
 
-# Generate heatmap
-sns.kdeplot(
-    x=player_data['x'],
-    y=player_data['y'],
-    fill=True,
-    alpha=0.5,
-    levels=10,
-    cmap='magma',
-    ax=ax
-)
+    # Generate heatmap
+    sns.kdeplot(
+        x=team_data['x'],
+        y=team_data['y'],
+        color='red',
+        # fill=True,
+        alpha=0.7,
+        levels=10,
+        cmap=custom_cmap,
+        n_levels=40,
+        shade=True,
+        ax=ax
+    )
 
-# Set pitch boundaries
-plt.xlim(0, 120)
-plt.ylim(0, 80)
-add_logo_on_heatmap(ax, "lagos-liga-blue.png", zoom=0.02, x_pos=0.5, y_pos=0.5, alpha=0.15)
-# Display the heatmap in Streamlit
-# ax.set_title(f'Pass Map for {player_name}', color='white', fontsize=10, pad=20)
-st.pyplot(fig_heat)
+    # Set pitch boundaries
+    plt.xlim(0, 120)
+    plt.ylim(0, 80)
+
+    # Display the heatmap in Streamlit
+    st.pyplot(fig_heat)
+    download_plot(fig_heat, f"{team_heat}_heatmap.png", facecolor=pitch.pitch_color)
+df_pass = fetch_data("Passes")
+create_team_heatmap(df_pass)
 
 
 
-import io
-from matplotlib import pyplot as plt
-buffer = io.BytesIO()
-fig_heat.savefig(buffer, format='png', dpi=300, bbox_inches='tight', facecolor=pitch.pitch_color)
-buffer.seek(0)
-
-# Add a download button in Streamlit
-st.download_button(
-    label="Download",
-    data=buffer,
-    file_name=f"{player_heat}_heatmap.png",
-    mime="image/png"
-)
 
 
 st.sidebar.header("Select Stat for Viz top 5")
@@ -537,26 +437,10 @@ ax.set_xlabel('Player')
 ax.set_ylabel(selected_stat)
 ax.set_xticklabels(df_top5['Player'], rotation=45)
 
-add_logo_on_heatmap(ax, "lagos-liga-blue.png", zoom=0.02, x_pos=0.5, y_pos=0.5, alpha=0.15)
+# add_logo_on_heatmap(ax, "Logo.png", zoom=0.02, x_pos=0.5, y_pos=0.5, alpha=0.15)
+
 st.pyplot(figs)
-
-import io
-from matplotlib import pyplot as plt
-
-# ... (your existing code to create the figure and plot data)
-
-# Save the plot to a BytesIO buffer
-buffer = io.BytesIO()
-figs.savefig(buffer, format='png', dpi=300, bbox_inches='tight', facecolor=pitch.pitch_color)
-buffer.seek(0)
-
-# Add a download button in Streamlit
-st.download_button(
-    label="Download Stats",
-    data=buffer,
-    file_name=f"Top 5 {selected_stat}.png",
-    mime="image/png"
-)
+download_plot(figs, f"Top 5 {selected_stat}.png")
 
 
 import streamlit as st
@@ -564,212 +448,125 @@ import pandas as pd
 from mplsoccer import VerticalPitch
 import matplotlib.pyplot as plt
 
-# Load data
+
+
 
 df_new = fetch_data("shoot")
 
-# Streamlit interface
-st.sidebar.header("Team Shot Analysis")
+import streamlit as st
+from mplsoccer import Pitch
+
+def plot_shot_map(df_new):
+    st.sidebar.header("Game & Team Shot Analysis")
+
+    # Get unique games from the data
+
+    games = df_new["Game"].unique()
+
+    # Select game
+    selected_game = st.sidebar.selectbox("Select Game", games, index=0)
+
+    # Filter data by selected game
+    filtered_df = df_new[df_new["Game"] == selected_game]
+
+    # Get unique teams from the filtered data
+    teams = filtered_df["team"].unique()
+
+    # Define team colors dynamically based on the teams in the data
+    team_colors = {team: f"C{i+1:02d}0{i+1:02d}" for i, team in enumerate(teams)}
+
+    # Team selection
+    team1 = st.sidebar.selectbox("Select Team 1", teams, index=0)
+    team2 = st.sidebar.selectbox("Select Team 2", teams, index=1)
+
+    # Split df into two parts, one for each team
+    team1_df = filtered_df[filtered_df["team"] == team1].copy()
+    team2_df = filtered_df[filtered_df["team"] == team2].copy()
+
+    # Split into goals and non-goals for each team
+    team1_df_g = team1_df[team1_df["outcome"] == "Goal"].copy()
+    team1_df_ng = team1_df[team1_df["outcome"] != "Goal"].copy()
+
+    team2_df_g = team2_df[team2_df["outcome"] == "Goal"].copy()
+    team2_df_ng = team2_df[team2_df["outcome"] != "Goal"].copy()
+
+    # Team stats
+    team1_tot_shots = team1_df.shape[0]
+    team1_tot_goals = team1_df_g.shape[0]
+    team1_tot_xg = team1_df["statsbomb_xg"].sum().round(2)
+
+    team2_tot_shots = team2_df.shape[0]
+    team2_tot_goals = team2_df_g.shape[0]
+    team2_tot_xg = team2_df["statsbomb_xg"].sum().round(2)
+
+    # Plot settings
+    pitch = Pitch(pitch_type='statsbomb', pitch_color='green', line_color='white', goal_type='box')
+
+    # Create the figure
+    fig, ax = pitch.draw(figsize=(7, 6))
+
+    # Title
+    ax.set_title(f"{team1} vs {team2} Shot Map", fontsize=10, pad=5)
+
+    # Plot Team 1 shots (shooting towards the right goal)
+    # Goals
+    pitch.scatter(team1_df_g["start_location_x"],
+                  team1_df_g["start_location_y"],
+                  s=team1_df_g["statsbomb_xg"] * 500 + 100,
+                  marker="football",
+                  c="blue",
+                  label=f"{team1} goals",
+                  ax=ax)
+    # Non-goals
+    pitch.scatter(team1_df_ng["start_location_x"],
+                  team1_df_ng["start_location_y"],
+                  s=team1_df_ng["statsbomb_xg"] * 500 + 100,
+                  c="red",
+                  alpha=0.5,
+                  hatch="//",
+                  edgecolor="#101010",
+                  marker="s",
+                  label=f"{team1} non-goals",
+                  ax=ax)
+
+    # Plot Team 2 shots (shooting towards the left goal)
+    # Goals
+    pitch.scatter(120 - team2_df_g["start_location_x"],  # Mirroring x-coordinates for the other direction
+                  team2_df_g["start_location_y"],
+                  s=team2_df_g["statsbomb_xg"] * 500 + 100,
+                  marker="football",
+                  c="cyan",
+                  label=f"{team2} goals",
+                  ax=ax)
+    # Non-goals
+    pitch.scatter(120 - team2_df_ng["start_location_x"],  # Mirroring x-coordinates for the other direction
+                  team2_df_ng["start_location_y"],
+                  s=team2_df_ng["statsbomb_xg"] * 500 + 100,
+                  c="orange",
+                  alpha=0.5,
+                  hatch="//",
+                  edgecolor="#101010",
+                  marker="s",
+                  label=f"{team2} non-goals",
+                  ax=ax)
+
+    # Add basic info for each team at the bottom
+    basic_info_txt = (
+        f"{team1} - Shots: {team1_tot_shots} | Goals: {team1_tot_goals} | xG: {team1_tot_xg}\n"
+        f"{team2} - Shots: {team2_tot_shots} | Goals: {team2_tot_goals} | xG: {team2_tot_xg}"
+    )
+    fig.text(0.5, 0.02, basic_info_txt, fontsize=5, ha="center", color="white")
+
+    # Add legend
+    ax.legend(labelspacing=2, loc="upper center", fontsize=5, bbox_to_anchor=(0.5, -0.05), ncol=2)
+
+    # Display the plot
+    st.pyplot(fig)
+    download_plot(fig, f"{team1}_vs_{team2}_shot_map.png")
+
+# Call the function with your DataFrame
+plot_shot_map(df_new)
 
 
 
-# Get unique teams from the data
-teams = df_new["team"].unique()
-
-# Define team colors dynamically based on the teams in the data
-team_colors = {team: f"C{i+1:02d}0{i+1:02d}" for i, team in enumerate(teams)}
-
-# Team selection
-team1 = st.sidebar.selectbox("Select Team 1", teams, index=0)
-team2 = st.sidebar.selectbox("Select Team 2", teams, index = 1)
-
-# Split df into two parts, one for each team
-team1_df = df_new[df_new["team"] == team1].copy()
-team2_df = df_new[df_new["team"] == team2].copy()
-
-# Split into goals and non-goals for each team
-team1_df_g = team1_df[team1_df["outcome"] == "Goal"].copy()
-team1_df_ng = team1_df[team1_df["outcome"] != "Goal"].copy()
-
-team2_df_g = team2_df[team2_df["outcome"] == "Goal"].copy()
-team2_df_ng = team2_df[team2_df["outcome"] != "Goal"].copy()
-
-# Team stats
-team1_tot_shots = team1_df.shape[0]
-team1_tot_goals = team1_df_g.shape[0]
-team1_tot_xg = team1_df["statsbomb_xg"].sum().round(2)
-
-team2_tot_shots = team2_df.shape[0]
-team2_tot_goals = team2_df_g.shape[0]
-team2_tot_xg = team2_df["statsbomb_xg"].sum().round(2)
-
-
-
-pitch = Pitch(pitch_type='statsbomb', pitch_color='green', line_color='white', goal_type='box')
-
-# Create the figure
-fig, ax = pitch.draw(figsize=(7, 6))
-
-# Title
-ax.set_title(f"{team1} vs {team2} Shot Map", fontsize=10, pad=5)
-
-# Plot Team 1 shots (shooting towards the right goal)
-# Goals
-pitch.scatter(team1_df_g["start_location_x"],
-              team1_df_g["start_location_y"],
-              s=team1_df_g["statsbomb_xg"] * 500 + 100,
-              marker="football",
-              c="blue",
-              label=f"{team1} goals",
-              ax=ax)
-# Non-goals
-pitch.scatter(team1_df_ng["start_location_x"],
-              team1_df_ng["start_location_y"],
-              s=team1_df_ng["statsbomb_xg"] * 500 + 100,
-              c="red",
-              alpha=0.5,
-              hatch="//",
-              edgecolor="#101010",
-              marker="s",
-              label=f"{team1} non-goals",
-              ax=ax)
-
-# Plot Team 2 shots (shooting towards the left goal)
-# Goals
-pitch.scatter(120 - team2_df_g["start_location_x"],  # Mirroring x-coordinates for the other direction
-              team2_df_g["start_location_y"],
-              s=team2_df_g["statsbomb_xg"] * 500 + 100,
-              marker="football",
-              c="cyan",
-              label=f"{team2} goals",
-              ax=ax)
-# Non-goals
-pitch.scatter(120 - team2_df_ng["start_location_x"],  # Mirroring x-coordinates for the other direction
-              team2_df_ng["start_location_y"],
-              s=team2_df_ng["statsbomb_xg"] * 500 + 100,
-              c="orange",
-              alpha=0.5,
-              hatch="//",
-              edgecolor="#101010",
-              marker="s",
-              label=f"{team2} non-goals",
-              ax=ax)
-
-# Add basic info for each team at the bottom
-basic_info_txt = (
-    f"{team1} - Shots: {team1_tot_shots} | Goals: {team1_tot_goals} | xG: {team1_tot_xg}\n"
-    f"{team2} - Shots: {team2_tot_shots} | Goals: {team2_tot_goals} | xG: {team2_tot_xg}"
-)
-fig.text(0.5, 0.02, basic_info_txt, fontsize=5, ha="center", color="white")
-
-# Add legend
-ax.legend(labelspacing=2, loc="upper center", fontsize=5, bbox_to_anchor=(0.5, -0.05), ncol=2)
-
-# Display the plot
-add_logo_on_heatmap(ax, "lagos-liga-blue.png", zoom=0.02, x_pos=0.5, y_pos=0.5, alpha=0.15)
-st.pyplot(fig)
-import io
-from matplotlib import pyplot as plt
-
-# ... (your existing code to create the figure and plot data)
-# Save the plot to a BytesIO buffer
-buffer = io.BytesIO()
-fig.savefig(buffer, format='png', dpi=300, bbox_inches='tight')
-buffer.seek(0)
-
-# Add a download button in Streamlit
-st.download_button(
-    label="Download",
-    data=buffer,
-    file_name=f"{team1}_vs_{team2}_shot_map.png",
-    mime="image/png"
-)
-
-
-
-data = fetch_data('matches')
-
-
-def generate_result_string(last_n_team_games):
-    return ''.join(last_n_team_games['result'].values)
-# Step 10: Data Visualization functions
-def filter_team_games(data, team):
-    return data[(data['home_team_name'] == team) | (data['away_team_name'] == team)]
-
-def get_last_n_games(team_games, n=3):
-    # Filter out games that haven't been played yet (missing goals)
-    completed_games = team_games.dropna(subset=['home_team_score', 'away_team_score'])
-    return completed_games.tail(n)
-
-def determine_result(row, team):
-    if team == row['home_team_name']:
-        if row['home_team_score'] > row['away_team_score']:
-            return 'W'
-        elif row['home_team_score'] < row['away_team_score']:
-            return 'L'
-        else:
-            return 'D'
-    elif team == row['away_team_name']:
-        if row['away_team_score'] > row['home_team_score']:
-            return 'W'
-        elif row['away_team_score'] < row['home_team_score']:
-            return 'L'
-        else:
-            return 'D'
-    else:
-        return None
-
-def display_last_n_games(last_n_team_games):
-    columns_to_display = ['home_team_name', 'away_team_name', 'home_team_score', 'away_team_score', 'result']
-    return last_n_team_games[columns_to_display]
-
-
-
-# Get unique team names
-unique_home_teams = data['home_team_name'].unique()
-unique_away_teams = data['away_team_name'].unique()
-
-# Remove home teams already present in the away teams list
-unique_away_teams = [team for team in unique_away_teams if team not in unique_home_teams]
-
-# Combine unique home and away team names
-all_unique_teams = list(unique_home_teams) + list(unique_away_teams)
-
-st.sidebar.header("Team Runs")
-
-# Use the multiselect widget with the combined unique team names
-selected_teams = st.sidebar.multiselect("Select Teams", all_unique_teams)
-
-# Ensure exactly two teams are selected
-
-if len(selected_teams) != 2:
-    st.sidebar.warning("Please select exactly two teams.")
-else:
-    # Unpack selected teams
-    team1, team2 = selected_teams
-
-    # Step 6: Filter the data based on the selected teams
-    team1_games = filter_team_games(data, team1)
-    team2_games = filter_team_games(data, team2)
-
-    # Get the last 5 games for each team
-    last_5_team1_games = get_last_n_games(team1_games)
-    last_5_team2_games = get_last_n_games(team2_games)
-
-    # Determine results for each team
-    last_5_team1_games['result'] = last_5_team1_games.apply(determine_result, axis=1, team=team1)
-    last_5_team2_games['result'] = last_5_team2_games.apply(determine_result, axis=1, team=team2)
-
-    # Generate result strings
-    team1_results_str = generate_result_string(last_5_team1_games)
-    team2_results_str = generate_result_string(last_5_team2_games)
-
-    # Display results and games
-    st.subheader(f"Last 5 games involving {team1}: {team1_results_str}")
-    st.write(display_last_n_games(last_5_team1_games))
-
-    st.subheader(f"Last 5 games involving {team2}: {team2_results_str}")
-    st.write(display_last_n_games(last_5_team2_games))
-
-
-
+# 

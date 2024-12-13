@@ -148,3 +148,105 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# data = fetch_data('matches')
+
+
+# def generate_result_string(last_n_team_games):
+#     return ''.join(last_n_team_games['result'].values)
+# # Step 10: Data Visualization functions
+# def filter_team_games(data, team):
+#     return data[(data['home_team_name'] == team) | (data['away_team_name'] == team)]
+
+# def get_last_n_games(team_games, n=3):
+#     # Filter out games that haven't been played yet (missing goals)
+#     completed_games = team_games.dropna(subset=['home_team_score', 'away_team_score'])
+#     return completed_games.tail(n)
+
+# def determine_result(row, team):
+#     if team == row['home_team_name']:
+#         if row['home_team_score'] > row['away_team_score']:
+#             return 'W'
+#         elif row['home_team_score'] < row['away_team_score']:
+#             return 'L'
+#         else:
+#             return 'D'
+#     elif team == row['away_team_name']:
+#         if row['away_team_score'] > row['home_team_score']:
+#             return 'W'
+#         elif row['away_team_score'] < row['home_team_score']:
+#             return 'L'
+#         else:
+#             return 'D'
+#     else:
+#         return None
+
+# def display_last_n_games(last_n_team_games):
+#     columns_to_display = ['home_team_name', 'away_team_name', 'home_team_score', 'away_team_score', 'result']
+#     return last_n_team_games[columns_to_display]
+
+
+
+# # Get unique team names
+# unique_home_teams = data['home_team_name'].unique()
+# unique_away_teams = data['away_team_name'].unique()
+
+# # Remove home teams already present in the away teams list
+# unique_away_teams = [team for team in unique_away_teams if team not in unique_home_teams]
+
+# # Combine unique home and away team names
+# all_unique_teams = list(unique_home_teams) + list(unique_away_teams)
+
+# st.sidebar.header("Team Runs")
+
+# # Use the multiselect widget with the combined unique team names
+# selected_teams = st.sidebar.multiselect("Select Teams", all_unique_teams)
+
+# # Ensure exactly two teams are selected
+
+# if len(selected_teams) != 2:
+#     st.sidebar.warning("Please select exactly two teams.")
+# else:
+#     # Unpack selected teams
+#     team1, team2 = selected_teams
+
+#     # Step 6: Filter the data based on the selected teams
+#     team1_games = filter_team_games(data, team1)
+#     team2_games = filter_team_games(data, team2)
+
+#     # Get the last 5 games for each team
+#     last_5_team1_games = get_last_n_games(team1_games)
+#     last_5_team2_games = get_last_n_games(team2_games)
+
+#     # Determine results for each team
+#     last_5_team1_games['result'] = last_5_team1_games.apply(determine_result, axis=1, team=team1)
+#     last_5_team2_games['result'] = last_5_team2_games.apply(determine_result, axis=1, team=team2)
+
+#     # Generate result strings
+#     team1_results_str = generate_result_string(last_5_team1_games)
+#     team2_results_str = generate_result_string(last_5_team2_games)
+
+#     # Display results and games
+#     st.subheader(f"Last 5 games involving {team1}: {team1_results_str}")
+#     st.write(display_last_n_games(last_5_team1_games))
+
+#     st.subheader(f"Last 5 games involving {team2}: {team2_results_str}")
+#     st.write(display_last_n_games(last_5_team2_games))
+
+
+
