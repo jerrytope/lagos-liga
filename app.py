@@ -168,6 +168,8 @@ df_stats = df_stats.groupby('Player').sum(numeric_only=True).reset_index()
 stats = ['Goals', 'Assists', 'Chances Created','Shots on target','Shots off target', 'Crosses', 'Fouls committed', 'Fouls drawn', 'Corner', 'Saves', 'Interception', 'Pass complete', 'Key Passes', 'Goal Involvement']
 
 
+
+
 def create_radar_chart(df, player1, player2):
     import plotly.graph_objects as go
 
@@ -231,18 +233,18 @@ elif selected_position == 'MF':
 elif selected_position == 'DF':
     columns_to_use = ['Player', 'Goals', 'Tackles', 'Interception', 'Blocks', 'Clearances', 'Fouls committed', 'Defensive Contribution', 'Error']
 
-# Filter DataFrame based on teams and positions
-df_team1_filtered = df[df['Team'] == team1]
-df_team2_filtered = df[df['Team'] == team2]
+# Filter DataFrame based on teams, positions, and columns
+df_team1_filtered = df[(df['Team'] == team1) & (df['POS'] == selected_position)]
+df_team2_filtered = df[(df['Team'] == team2) & (df['POS'] == selected_position)]
 filtered_df_radar = df[df['POS'] == selected_position][columns_to_use]
 
-# Get unique players from filtered teams
+# Get unique players filtered by team and position
 players_team1 = df_team1_filtered['Player'].unique().tolist()
 players_team2 = df_team2_filtered['Player'].unique().tolist()
 
 # Sidebar player selection
-player1 = st.sidebar.selectbox(f"Select Player from {team1}", players_team1, index=1)
-player2 = st.sidebar.selectbox(f"Select Player from {team2}", players_team2, index=1)
+player1 = st.sidebar.selectbox(f"Select Player from {team1}", players_team1, index=0)
+player2 = st.sidebar.selectbox(f"Select Player from {team2}", players_team2, index=0)
 
 # Ensure two different players are selected
 if player1 != player2:
@@ -262,21 +264,144 @@ else:
     st.sidebar.warning("Please select two different players.")
 
 
-def plot_pass_map_for_player(ax, player_name, df_pass):
-    # Filter the pass DataFrame for the selected player
-    player_pass_df = df_pass[df_pass['player'] == player_name]
 
+# def plot_pass_map_for_player(ax, player_name, df_pass):
+#     # Filter the pass DataFrame for the selected player
+#     player_pass_df = df_pass[df_pass['player'] == player_name]
+
+#     # Create the pitch
+#     pitch = Pitch(pitch_type='statsbomb', pitch_color='#22312b', line_color='#c7d5cc')
+#     pitch.draw(ax=ax)
+#     ax.set_title(f'Pass Map for {player_name}', color='white', fontsize=10, pad=20)
+#     ax.invert_yaxis()
+
+#     # Initialize legend elements
+#     legend_elements = []
+
+#     # Plot each pass
+#     for _, row in player_pass_df.iterrows():
+#         if row['outcome'] == 'successful':
+#             ax.plot((row['x'], row['endX']), (row['y'], row['endY']), color='green')
+#             ax.scatter(row['x'], row['y'], color='green')
+#             if not any(el.get_label() == "Successful" for el in legend_elements):
+#                 legend_elements.append(Line2D([0], [0], color='green', lw=2, label='Successful'))
+#         elif row['outcome'] == 'unsuccessful':
+#             ax.plot((row['x'], row['endX']), (row['y'], row['endY']), color='red')
+#             ax.scatter(row['x'], row['y'], color='red')
+#             if not any(el.get_label() == "Unsuccessful" for el in legend_elements):
+#                 legend_elements.append(Line2D([0], [0], color='red', lw=2, label='Unsuccessful'))
+
+#     # Add legend to the plot
+#     ax.legend(
+#         handles=legend_elements,
+#         loc='upper center',  # Move the legend upwards
+#         fontsize=8,
+#         facecolor='white',  # Change the background to white
+#         frameon=True,  # Ensure legend has a background
+#         edgecolor='black',  # Add a border for contrast
+#     )
+
+# import matplotlib.pyplot as plt
+# import io
+# import streamlit as st
+
+# def plot_pass_maps(player1, df_pass):
+#     # Create a single plot
+#     fig, ax = plt.subplots(figsize=(8, 7)) 
+
+#     # Set background color
+#     fig.set_facecolor('#22312b')
+#     ax.patch.set_facecolor('#22312b')
+
+#     # Plot pass map for the player
+#     plot_pass_map_for_player(ax, player1, df_pass)
+
+#     # Display in Streamlit
+#     st.pyplot(fig)
+#     download_plot(fig, f"{player1}_pass_map.png")
+
+
+
+
+
+
+
+# df_pass = fetch_data("Passes")
+
+# st.sidebar.header("Pass Charts")
+
+# # Add "All games" option to the game selection
+# game_options = ["All games"] + df_pass["Game"].unique().tolist()
+# selected_pass_game = st.sidebar.selectbox("Select a game", game_options)
+
+# # Dropdown to select a team
+# if selected_pass_game == "All games":
+#     # If "All games" is selected, get unique teams across all games
+#     team_options = df_pass["Team"].unique()
+# else:
+#     # Filter by selected game and get unique teams
+#     filtered_pass_game = df_pass[df_pass["Game"] == selected_pass_game]
+#     team_options = filtered_pass_game["Team"].unique()
+
+# selected_pass_team = st.sidebar.selectbox("Select a team", options=team_options)
+
+# # Dropdown to select a player
+# if selected_pass_game == "All games":
+#     # Use all data for the selected team
+#     filtered_pass_team = df_pass[df_pass["Team"] == selected_pass_team]
+# else:
+#     # Filter by game and team
+#     filtered_pass_team = filtered_pass_game[filtered_pass_game["Team"] == selected_pass_team]
+
+# players = filtered_pass_team["player"].unique()
+# player1_pass = st.sidebar.selectbox("Select Player 1", options=players, key="player1", index=0)
+
+
+
+
+# st.header("Player Passes on Football Pitch")
+
+# # Plot pass maps using the filtered player data
+# plot_pass_maps(player1_pass, filtered_pass_team)
+
+
+
+import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from mplsoccer import Pitch
+import io
+import streamlit as st
+
+# # Function to fetch data
+# def fetch_data(data_type):
+#     # Replace with actual data fetching logic
+#     pass
+
+# # Function to download the plot
+# def download_plot(fig, filename):
+#     buf = io.BytesIO()
+#     fig.savefig(buf, format="png")
+#     buf.seek(0)
+#     st.download_button(
+#         label="Download Pass Map",
+#         data=buf,
+#         file_name=filename,
+#         mime="image/png"
+#     )
+
+# Plot team pass map
+def plot_pass_map_for_team(ax, team_name, team_data):
     # Create the pitch
     pitch = Pitch(pitch_type='statsbomb', pitch_color='#22312b', line_color='#c7d5cc')
     pitch.draw(ax=ax)
-    ax.set_title(f'Pass Map for {player_name}', color='white', fontsize=10, pad=20)
+    ax.set_title(f'Pass Map for {team_name}', color='white', fontsize=10, pad=20)
     ax.invert_yaxis()
 
     # Initialize legend elements
     legend_elements = []
 
     # Plot each pass
-    for _, row in player_pass_df.iterrows():
+    for _, row in team_data.iterrows():
         if row['outcome'] == 'successful':
             ax.plot((row['x'], row['endX']), (row['y'], row['endY']), color='green')
             ax.scatter(row['x'], row['y'], color='green')
@@ -291,40 +416,33 @@ def plot_pass_map_for_player(ax, player_name, df_pass):
     # Add legend to the plot
     ax.legend(
         handles=legend_elements,
-        loc='upper center',  # Move the legend upwards
+        loc='upper center',
         fontsize=8,
-        facecolor='white',  # Change the background to white
-        frameon=True,  # Ensure legend has a background
-        edgecolor='black',  # Add a border for contrast
+        facecolor='white',
+        frameon=True,
+        edgecolor='black',
     )
 
-import matplotlib.pyplot as plt
-import io
-import streamlit as st
-
-def plot_pass_maps(player1, df_pass):
+# Main function to plot the map
+def plot_pass_maps(team_name, team_data):
     # Create a single plot
-    fig, ax = plt.subplots(figsize=(8, 7)) 
+    fig, ax = plt.subplots(figsize=(8, 7))
 
     # Set background color
     fig.set_facecolor('#22312b')
     ax.patch.set_facecolor('#22312b')
 
-    # Plot pass map for the player
-    plot_pass_map_for_player(ax, player1, df_pass)
+    # Plot pass map for the team
+    plot_pass_map_for_team(ax, team_name, team_data)
 
     # Display in Streamlit
     st.pyplot(fig)
-    download_plot(fig, f"{player1}_pass_map.png")
+    download_plot(fig, f"{team_name}_pass_map.png")
 
-
-
-
-
-
-
+# Load the pass data
 df_pass = fetch_data("Passes")
 
+# Streamlit UI
 st.sidebar.header("Pass Charts")
 
 # Add "All games" option to the game selection
@@ -333,30 +451,23 @@ selected_pass_game = st.sidebar.selectbox("Select a game", game_options)
 
 # Dropdown to select a team
 if selected_pass_game == "All games":
-    # If "All games" is selected, get unique teams across all games
     team_options = df_pass["Team"].unique()
 else:
-    # Filter by selected game and get unique teams
     filtered_pass_game = df_pass[df_pass["Game"] == selected_pass_game]
     team_options = filtered_pass_game["Team"].unique()
 
 selected_pass_team = st.sidebar.selectbox("Select a team", options=team_options)
 
-# Dropdown to select a player
+# Filter data for the selected team
 if selected_pass_game == "All games":
-    # Use all data for the selected team
     filtered_pass_team = df_pass[df_pass["Team"] == selected_pass_team]
 else:
-    # Filter by game and team
     filtered_pass_team = filtered_pass_game[filtered_pass_game["Team"] == selected_pass_team]
 
-players = filtered_pass_team["player"].unique()
-player1_pass = st.sidebar.selectbox("Select Player 1", options=players, key="player1", index=0)
+# Plot the team pass map
+st.header(f"Passes for {selected_pass_team}")
+plot_pass_maps(selected_pass_team, filtered_pass_team)
 
-st.header("Player Passes on Football Pitch")
-
-# Plot pass maps using the filtered player data
-plot_pass_maps(player1_pass, filtered_pass_team)
 
 from matplotlib.lines import Line2D
 import matplotlib.colors as mcolors
@@ -453,7 +564,7 @@ import matplotlib.pyplot as plt
 
 df_new = fetch_data("shoot")
 
-import streamlit as st
+# import streamlit as st
 from mplsoccer import Pitch
 
 def plot_shot_map(df_new):
@@ -567,6 +678,3 @@ def plot_shot_map(df_new):
 # Call the function with your DataFrame
 plot_shot_map(df_new)
 
-
-
-# 
