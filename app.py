@@ -394,7 +394,7 @@ def plot_pass_map_for_team(ax, team_name, team_data):
     # Create the pitch
     pitch = Pitch(pitch_type='statsbomb', pitch_color='#22312b', line_color='#c7d5cc')
     pitch.draw(ax=ax)
-    ax.set_title(f'Pass Map for {team_name}', color='white', fontsize=10, pad=20)
+    ax.set_title(f'Pass Map for {team_name} - {selected_pass_game}', color='white', fontsize=10, pad=20)
     ax.invert_yaxis()
 
     # Initialize legend elements
